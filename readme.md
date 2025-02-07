@@ -131,7 +131,7 @@ Fine-tune the starting and ending positions of the scroll range used to calculat
 `data-scrollage-offset-start="60px"`  
 `data-scrollage-offset-end="30%"` or `data-scrollage-offset-end="30"`
 
-### JavaScript Initialization
+## JavaScript Initialization
 
     <script>
         // Initialize Scrollage with default settings
@@ -260,6 +260,23 @@ Here’s a complete example combining HTML structure and JavaScript initializati
             </script>
         </body>
     </html>
+
+## JavaScript Methods
+
+### `init()`
+
+Manually re-caches and updates all animated elements, triggers, and trackers.  
+Call this method to reinitialize the Scrollage instance after dynamic DOM changes or layout adjustments. It recalculates the dimensions of the scroll wrapper, updates the scroll positions, and re-attaches necessary event listeners.
+
+### `getScrollPos()`
+
+Returns the current scroll position of the defined wrapper (or the Document/HTML element if no wrapper is specified) as a percentage.  
+Use this method to obtain the scroll progress relative to the total scrollable range of the target container.
+
+### `destroy()`
+
+Cleans up the Scrollage instance by emptying all cached elements, triggers, and trackers, and by removing all attached event listeners.  
+Call this method when the instance is no longer needed or before reinitializing Scrollage to free up resources and avoid memory leaks.
 
 ## License
 
