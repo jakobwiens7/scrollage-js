@@ -1,6 +1,6 @@
 # ScrollageJS
 
-ScrollageJS is a lightweight JavaScript library that animates elements based on the scroll position. It calculates an element’s animation progress relative to a defined scroll range and applies various CSS transformations (move, rotate, scale, fade, blur) as the user scrolls.
+ScrollageJS is a lightweight JavaScript library that animates elements based on the scroll position. It calculates an element’s animation progress relative to a defined scroll range and applies various CSS transformations and effects as the user scrolls.
 
 ## Installation
 
@@ -10,18 +10,17 @@ You can include ScrollageJS in your project by adding the compiled JavaScript fi
 
 ## Usage
 
-    <div class="target">
+    <div class="range">
         <div class="scrollage"
-            data-scrollage-selector=".target"
+            data-scrollage-range=".range"
             data-scrollage-move='{"startY":"-60px", "endY":"30%"}'
         >
             My animated element
         </div>
     </div>
 
-`.scrollage`: This element will be animated based on scrolling.
-
-`.target`: Optional. Serves as the scroll range, that controls the scrollage element's animation progress.
+- `.scrollage`: This element will be animated based on scrolling.
+- `.range`: Optional. Serves as the scroll range that controls the scrollage element's animation progress.
 
 ScrollageJS uses several data attributes on the animated elements to configure their behavior:
 
@@ -30,106 +29,152 @@ ScrollageJS uses several data attributes on the animated elements to configure t
 Specifies the movement animation parameters via JSON object:
 
     {
-        "axis": "x" | "y" | "xy",
-        "startX": "60px" | "30%" | 30,
-        "endX": "60px" | "30%" | 30,
-        "startY": "60px" | "30%" | 30,
-        "endY": "60px" | "30%" | 30,
+        "startX": 30 | "30%" | "-60px" | "15vw",
+        "endX": -30 | "-30%" | "-60px" | "-15vw",
+        "startY": -30 | "-30%" | "-60px" | "-15vh",
+        "endY": 30 | "30%" | "60px" | "15vh",
         "responsive": {
-            "phone": { "startX": "60px", "endX": "30%" },
-            "tablet": { "startX": "60px", "endX": "30%" },
-            "laptop": { "startX": "60px", "endX": "30%" },
-            "desktop": { "startX": "60px", "endX": "30%" }
+            "phone": { "startX": 30 | "30%" | "60px" | "15vw", ... },
+            "tablet": { "endX": 30 | "30%" | "60px" | "15vw", ... },
+            "laptop": { "endY": 30 | "30%" | "60px" | "15vh", ... },
+            "desktop": { "startY": 30 | "30%" | "60px" | "15vh", ... }
         },
         "easing": "InSine" | "OutSine" | "InOutSine" | "InCubic" | ...
     }
 
-`startX`/`endX` and `startY`/`endY`: Set the initial and final movement values in pixels or percentage. (Note: Percentages refer to the target element.)  
-`axis`: Optional. Determines the direction(s) of movement. Default: `"y"`.  
-`responsive`: Optional. Allows different values per breakpoint. Default: `false`.  
-`easing`: Optional. Specifies the easing function to use. Default: `false`.
+- `startX`/`endX`: The initial and final horizontal movement values (in percentage, pixels or `vw`). Default: `0`.
+- `startY`/`endY`: The initial and final vertical movement values (in percentage, pixels or `vh`). Default: `0`.
+- `responsive`: Optional. Allows different values per breakpoint. Default: `false`.
+- `easing`: Optional. Specifies the easing function to use. Default: `false`.
+
+Note: Percentages refer to the range or wrapper element.
 
 ### `data-scrollage-rotate`
 
 Defines rotation animation parameters via JSON object:
 
     {
-        "axis": "x" | "y" | "z" | "xy" | "xz" | "yz" | "xyz",
-        "start": 0,
-        "end": 360,
+        "end": -360 | "-360deg",
+        "responsive": { ... }
         "easing": "InSine" | "OutSine" | "InOutSine" | ...
     }
 
-`start`/`end`: Rotation angle range (in degrees).  
-`axis`: Optional. Axis of rotation. Default: `"z"`.  
-`easing`: Optional. Easing function. Default: `false`.
+or
+
+    {
+        "endY": -360 | "-360deg",
+        "startX": 180 | "180deg",
+        "responsive": { ... }
+        "easing": "InSine" | "OutSine" | "InOutSine" | ...
+    }
+
+- `start` / `end`: The initial and final rotation angles (in degrees) on the default axis (`Z`).
+  - Shortcut for `startZ` / `endZ` (same effect).
+  - Default: `0`.
+- `startX` / `endX`: Rotation angles for the X-axis (ignored if `start` / `end` are set). Default: `0`.
+- `startY` / `endY`: Rotation angles for the Y-axis (ignored if `start` / `end` are set). Default: `0`.
+- `startZ` / `endZ`: Rotation angles for the Z-axis (same as `start` / `end`, but explicit). Default: `0`.
+- `responsive`: Optional. Allows different values per breakpoint. Default: `false`.
+- `easing`: Optional. Easing function. Default: `false`.
 
 ### `data-scrollage-scale`
 
 Configures scaling animations via JSON object:
 
     {
-        "axis": "xy" | "x" | "y",
-        "start": 0,
-        "end": 100,
+        "end": 150 | "150%",
+        "responsive": { ... }
         "easing": "InSine" | "OutSine" | "InOutSine" | ...
     }
 
-`start`/`end`: Scaling values as percentages (0-100).  
-`axis`: Optional. Determines whether scaling is applied on one or both axes. Default: `"xy"`  
-`easing`: Optional. Easing function. Default: `false`.
+or
+
+    {
+        "startY": 0 | "0%",
+        "endX": 150 | "150%",
+        "responsive": { ... }
+        "easing": "InSine" | "OutSine" | "InOutSine" | ...
+    }
+
+- `start` / `end`: The initial and final scale values for both X and Y axes (in percentage).
+  - Shortcut for `startX` / `endX` and `startY` / `endY` (same effect).
+  - Default: `100`.
+- `startX` / `endX`: Scale values for the X-axis in percentage (ignored if `start` / `end` are set). Default: `100`.
+- `startY` / `endY`: Scale values for the Y-axis in percentage (ignored if `start` / `end` are set). Default: `100`.
+- `responsive`: Optional. Allows different values per breakpoint. Default: `false`.
+- `easing`: Optional. Easing function. Default: `false`.
 
 ### `data-scrollage-fade`
 
 Specifies fade (opacity) animation settings via JSON object:
 
     {
-        "start": 0,
-        "end": 100,
+        "start": 0 | "0%",
+        "responsive": { ... }
         "easing": "InSine" | "OutSine" | "InOutSine" | ...
     }
 
-`start`/`end`: Opacity percentage values (0–100).  
-`easing`: Optional. Easing function. Default: `false`.
+- `start`/`end`: The initial and final opacity in percentage (0–100). Default: `100`.
+- `responsive`: Optional. Allows different values per breakpoint. Default: `false`.
+- `easing`: Optional. Easing function. Default: `false`.
+
+### `data-scrollage-saturate`
+
+Configures saturation animations via JSON object:
+
+    {
+        "start": 0 | "0%",
+        "end": 150 | "150%",
+        "responsive": { ... }
+        "easing": "InSine" | "OutSine" | "InOutSine" | ...
+    }
+
+- `start`/`end`: The initial and final saturation in percentage. Default: `100`.
+- `responsive`: Optional. Allows different values per breakpoint. Default: `false`.
+- `easing`: Optional. Easing function. Default: `false`.
 
 ### `data-scrollage-blur`
 
 Configures blur effect animations via JSON object:
 
     {
-        "start": 0,
-        "end": 20,
+        "end": 16 | "16px",
+        "responsive": { ... }
         "easing": "InSine" | "OutSine" | "InOutSine" | ...
     }
 
-`start`/`end`: Blur values (in pixels).  
-`easing`: Optional. Easing function. Default: `false`.
+- `start`/`end`: The initial and final blur values in pixels. Default: `0`.
+- `responsive`: Optional. Allows different values per breakpoint. Default: `false`.
+- `easing`: Optional. Easing function. Default: `false`.
 
-Note: This will heavily impact performance, so use with care - or not at all!
+Note: This can heavily impact performance, especially on lower end devices! You have been warned!
 
-### `data-scrollage-selector`
+### `data-scrollage-range`
 
-By default, the `Document` or `HTML` element serves as the scroll range, that controls the animation progress of your scrollage elements.
-However, this may not always be desirable, since elements get animated as soon as you start scrolling, even when they're not in view.
-In order to solve this issue you can specify a target element by it's CSS Selector, which will then serve as the scroll range that controls the animation progress of your scrollage element during scrolling. The animation begins when the scroll position reaches this target.
+By default, ScrollageJS uses the entire page (`documentElement`) as the scroll range, that controls the animation progress. However, you can define any element as the scroll range by specifying a CSS selector. This ensures animations start when the element enters the viewport and end when it leaves.
 
-### `data-scrollage-type`
+**Examples:**  
+`data-scrollage-range="#my-section"`  
+`data-scrollage-range="section.animation-range"`
 
-These values let you adjust when the animation should start relative to the target's visibility:
+### `data-scrollage-offset`
 
-`default`: Animation progression starts as soon as the target element’s top enters the viewport.
+Adjust the starting and ending positions of the animation by applying an offset to the scroll range. In vertical mode, this modifies the top and bottom positions. In horizontal mode, it affects the left and right positions. You can use positive or negative numbers with `%`, `px`, `vh` or `vw` units.
 
-`targetInView`: Animation begins once the target element is fully visible (or covers the entire viewport).
-
-`targetInViewCenter`: Animation starts when the target element reaches the center of the screen.
+**Examples:**  
+`data-scrollage-offset="-30%"` or `data-scrollage-offset="-30"`  
+`data-scrollage-offset="15vh"` or `data-scrollage-offset="15vw"`  
+`data-scrollage-offset="60px"`
 
 ### `data-scrollage-offset-start` & `data-scrollage-offset-end`
 
-Fine-tune the starting and ending positions of the scroll range used to calculate the animation progress. You can use both positive and negative values. When using percentages, the value refers to the target’s height.
+Adjust the starting and ending positions of the animation by applying individual offsets to the scroll range. In vertical mode, this modifies the top and bottom positions. In horizontal mode, it affects the left and right positions. You can use positive or negative numbers with `%`, `px`, `vh` or `vw` units.
 
 **Examples:**  
-`data-scrollage-offset-start="60px"`  
-`data-scrollage-offset-end="30%"` or `data-scrollage-offset-end="30"`
+`data-scrollage-offset-end="30%"` or `data-scrollage-offset-end="30"`  
+`data-scrollage-offset-start="-15vh"`  
+`data-scrollage-offset-end="15vw"`  
+`data-scrollage-offset-start="60px"`
 
 ## JavaScript Initialization
 
@@ -155,62 +200,26 @@ When initializing ScrollageJS, you can customize its behavior via the options ob
 
 ### `direction`
 
-Controls whether scrolling is considered `vertical` or `horizontal`.  
-Default: `'vertical'`.
+Controls whether scrolling is considered `vertical` or `horizontal`. Default: `'vertical'`.
 
 ### `breakpoints`
 
-An array of three numeric values to define responsive breakpoints, e.g. `[640, 980, 1280]`.  
-Default: `[781, 1024, 1366]`.
+An array of three numeric values to define responsive breakpoints, e.g. `[640, 980, 1280]`. Default: `[781, 1024, 1366]`.
 
 ### `wrapper`
 
-The element that serves as the scroll container.  
-Default: `document`.
-
-### `hasScrolledEnabled`
-
-If `true`, a CSS will be added to the wrapper when scroll position is > 0.  
-Default: `false`.
-
-### `hasScrolledClass`
-
-Customize the CSS class, that is added to the wrapper when scroll position is > 0.  
-Default: `'has-scrolled'`.
-
-### `hasScrolledOffset`
-
-Offset the required scroll position by the given value for the above CSS class to be added.  
-Default: `0`
+The element that serves as the scroll container. Default: `documentElement`.
 
 ### `triggers`
 
-You can define custom triggers, that add CSS classes when certain scroll positions are reached.  
-Default: `[]`
+Triggers allow you to add or remove CSS classes when a specific scroll position is reached. This is useful for applying effects, styling changes, or triggering external behaviors. Default: `[]`
 
     triggers: [
         {
-            selector: "#intro",     // Element or selector string that defines the trigger range.
-            identifier: "intro",    // A string used as a class suffix (e.g., "has-triggered-intro").
-            position: 100,          // Optional: The position (percentage or pixel string, e.g., '100px') at which to trigger.
-            target: null            // Optional: The element to which the class is added. Use '_self' to target the trigger element itself; defaults to the wrapper.
-        }
-    ]
-
-### `hasTriggeredClassPrefix`
-
-Customize the CSS class prefix for your custom triggers, e.g. `has-triggered-intro`.  
-Default: `'has-triggered-'`.
-
-### `trackers`
-
-You can setup trackers, that track the height (maybe other properties?) of defined elements. A CSS Variable will then be added to the wrapper containing and updating it's value when scrolling.
-
-    trackers: [
-        {
-            selector: ".site-header",  // Element or selector string to track.
-            identifier: "nav-height",  // A string; the resulting CSS variable will be `--nav-height`.
-            target: null               // Optional: The element to which the CSS variable is applied; defaults to the wrapper.
+            range: "#intro",                // Optional: The element/selector string, that defines the trigger range. Defaults to the wrapper or `documentElement`.
+            position: 100 | "250px",        // Optional: The position relative to the range element at which to trigger (number in percentage or string with `%`, `px`, `vh`, `vw`). Defaults to `0`.
+            class: "has-triggered-intro",   // The class, thats being added to the target element on trigger.
+            target: "#class-target"         // Optional: The element/selector target, to which the class is added. Use `_self` to target the range element itself. Defaults to the wrapper or `documentElement`.
         }
     ]
 
@@ -226,18 +235,18 @@ Here’s a complete example combining HTML structure and JavaScript initializati
             <title>ScrollageJS Example</title>
             <style>
                 /* Basic styles for demonstration */
-                .target { position: relative; height: 200vh; }
-                .scrollage { opacity: 0; }
-                .has-scrolled { background-color: #f0f0f0; }
+                .range { height: 200vh; }
+                .has-triggered-range { background-color: #f0f0f0; }
             </style>
             <script src="path/to/scrollage.min.js"></script>
         </head>
         <body>
-            <div class="target">
+            <div class="range">
                 <div class="scrollage"
-                    data-scrollage-selector=".target"
-                    data-scrollage-offset-start="-60px"
-                    data-scrollage-offset-end="15%"
+                    data-scrollage-range=".range"
+                    data-scrollage-offset="-30%"
+                    data-scrollage-move='{"endY": 100}'
+                    data-scrollage-fade='{"start: 0}'
                 >
                     Animated Element
                 </div>
@@ -246,16 +255,13 @@ Here’s a complete example combining HTML structure and JavaScript initializati
             <script>
                 // Initialize ScrollageJS with custom options
                 const scrollageInstance = new Scrollage('.scrollage', {
-                    hasScrolledEnabled: true,
-                    triggers: [
-                        // Example trigger object
-                        {
-                        selector: '.target',
-                        identifier: 'example',
+
+                    triggers: [{
+                        range: '.range',
+                        class: 'has-triggered-range',
                         position: '50%',
                         target: '_self'
-                        }
-                    ]
+                    }]
                 });
             </script>
         </body>
@@ -265,18 +271,21 @@ Here’s a complete example combining HTML structure and JavaScript initializati
 
 ### `init()`
 
-Manually re-caches and updates all animated elements, triggers, and trackers.  
-Call this method to reinitialize the Scrollage instance after dynamic DOM changes or layout adjustments. It recalculates the dimensions of the scroll wrapper, updates the scroll positions, and re-attaches necessary event listeners.
+Re-caches and updates all animated elements and triggers.  
+Call this method to manually reinitialize the Scrollage instance after dynamic DOM changes or layout adjustments. It recalculates the dimensions of the scroll wrapper, updates the scroll positions, and re-attaches necessary event listeners.
 
-### `getScrollPos()`
+### `update()`
 
-Returns the current scroll position of the defined wrapper (or the Document/HTML element if no wrapper is specified) as a percentage.  
-Use this method to obtain the scroll progress relative to the total scrollable range of the target container.
+Recalculates the scroll progress and immediately updates all animations without reinitializing the instance.
+
+### `getScrollProgress(el | string)`
+
+Returns the current scroll progress of the specified element or selector string (or `documentElement` if not specified) in percentage.
 
 ### `destroy()`
 
 Cleans up the Scrollage instance by emptying all cached elements, triggers, and trackers, and by removing all attached event listeners.  
-Call this method when the instance is no longer needed or before reinitializing Scrollage to free up resources and avoid memory leaks.
+Call this method when the instance is no longer needed to free up resources and avoid memory leaks.
 
 ## License
 

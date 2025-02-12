@@ -36,6 +36,7 @@ export function debounce(func, delay = 100) {
     };
 }
 
+
 /**
  * Splits a value (e.g., '50%' or '100px') into a numeric value and a unit.
  * 
@@ -44,74 +45,92 @@ export function debounce(func, delay = 100) {
  * @returns {Object} - An object containing the `value` (numeric value) and `unit` (unit).
  */
 export function splitValueUnit(str) {
+    if (typeof str === 'number') return { value: str };
     if (!str || typeof str !== 'string') return;
+
     let strSplit = str.match(/^([-.\d]+(?:\.\d+)?)(.*)$/);
 
     return { 
-        'value': Number(strSplit[1].trim()), 
-        'unit': strSplit[2].trim()
+        value: Number(strSplit[1].trim()), 
+        unit: strSplit[2].trim()
     };
+}
+
+/**
+ * Converts a unit-based value (px, %, vw, vh) into an absolute pixel value.
+ *
+ * @param {string} unit - The unit type (e.g., "px", "%", "vw", "vh").
+ * @param {number} value - The numeric value associated with the unit.
+ * @param {number} totalSize - The total size of the container (used for percentage calculations).
+ * @param {Object} winSizeObj - The viewport size with properties `{ x: width, y: height }`.
+ * @param {number} [elSize=0] - The element's size (optional, used for percentage-based calculations).
+ * 
+ * @returns {number} - The computed pixel value.
+ */
+export function calculateUnitValue(unit, value, winSizes, totalSize, elSize = 0) {
+    switch (unit) {
+        case 'vw': return (winSizes.x * value) / 100;
+        case 'vh': return (winSizes.y * value) / 100;
+        case 'px': return value;
+        default: return ((totalSize - elSize) * value) / 100; // Assume % by default
+    }
 }
 
 
 /**
- * Determines the current breakpoint based on the window width and the defined breakpoints.
- * 
- * @param {number[]} breakpoints - An array of breakpoints (e.g., `[600, 1024, 1366]`).
- * @param {number} width - The current window width.
- * 
- * @returns {string} - The current breakpoint as a string: 'phone', 'tablet', 'laptop', or 'desktop'.
+ * Rounds a given number to a specified number of decimal places.
+ *
+ * @param {number} value - The number to be rounded.
+ * @param {number} [decimals=1] - The number of decimal places to round to (default: 1).
+ * @returns {number} - The rounded number.
  */
-export function getCurrentBreakpoint(breakpoints, width) {
-    if (width <= breakpoints[0]) return 'phone';
-    if (width <= breakpoints[1]) return 'tablet';
-    if (width <= breakpoints[2]) return 'laptop';
-    return 'desktop';
+export function roundValue(value, decimals = 1) {
+    return Math.round(value * 10 ** decimals) / 10 ** decimals;
 }
 
-// Validate user defined custom breakpoints
-export function validateCustomBreakpoints(breakpoints = []) {
-    if (breakpoints.length === 3 && Array.isArray(breakpoints)) {
-        var isAscending = true;
-        var isNumerical = true;
-        var lastVal;
 
-        breakpoints.forEach(function(i) {
-            if (typeof i !== 'number') isNumerical = false;
-            if (lastVal !== null) {
-                if (i < lastVal) isAscending = false;
-            }
-            lastVal = i;
-        });
-        if (isAscending && isNumerical) return breakpoints;
+/**
+ * Validates whether a given wrapper is a valid DOM element.
+ *
+ * - Allows both selector strings and direct element references.
+ * - Checks if the element exists in the DOM.
+ *
+ * @param {string|HTMLElement|null} wrapper - The selector or element to validate.
+ * @returns {HTMLElement|null} - The valid wrapper element or `null` if invalid.
+ */
+export function validateEl(el, context = 'element') {
+
+    // If it's already an element, return it directly
+    if (el instanceof HTMLElement) {
+        return el;
     }
-    // Revert to default if set incorrectly
-    console.warn("ScrollageJS: Breakpoints need to be an array of 3 values in ascending order.");
-    return undefined;
-}
 
-// Validate user defined custom wrapper
-export function validateCustomWrapper(wrapper = null) {
-    if (wrapper) {
-        if (wrapper instanceof HTMLElement) {
-            return wrapper;
-        } else if (typeof wrapper === 'string') {
-            let validatedWrapper = document.querySelector(wrapper);
-
-            if (validatedWrapper) return validatedWrapper;
-        }
-    }
-    // Revert to default if not found
-    console.warn(`ScrollageJS: Wrapper not found. Falling back to default.`);
-    return undefined;
-}
-
-// Validate target elements
-export function validateElements(el = null) {
+    // If it's a string, try to select the element
     if (typeof el === 'string') {
-        return document.querySelectorAll(el);
-    } else if (el) {
-        return [el];
+        const selectedEl = document.querySelector(el);
+
+        if (selectedEl) return selectedEl;
     }
+    
+    // Revert to default if not found
+    console.warn(`ScrollageJS: Your desired ${context} "${el}" is not a valid element or selector.`);
     return null;
+}
+
+
+/**
+ * Safely parses a JSON string and returns an object.
+ * If parsing fails, logs a warning and returns an empty object.
+ *
+ * @param {string} jsonString - The JSON string to parse.
+ * @param {string} context - The name of the attribute for error logging.
+ * @returns {Object} - The parsed object or an empty object if parsing fails.
+ */
+export function safeParseJSON(jsonString, context = 'JSON data') {
+    try {
+        return JSON.parse(jsonString);
+    } catch (error) {
+        console.warn(`ScrollageJS: Invalid JSON in ${context}.`, error);
+        return {}; // Return empty object instead of undefined
+    }
 }

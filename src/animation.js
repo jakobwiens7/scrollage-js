@@ -1,45 +1,125 @@
 // Dependencies
 import EasingFuncs from './easing.js';
-import { splitValueUnit } from './utils.js';
+import { splitValueUnit, calculateUnitValue, roundValue, safeParseJSON } from './utils.js';
 
 
 // Animation default values
-export const animationDefaults = {
+// TO-DO: skew, box-shadow, text-shadow, color, bgColor/bgGradient?
+const ANIMATION_DEFAULTS = {
     move: {
-        axis: 'y', 		// string 'x', 'y', 'xy'
-        startY: 0, 		// num || string '100%', '100px'
-        endY: 100,		// num || string '100%', '100px'
-        startX: 0, 		// num || string '100%', '100px'
-        endX: 100, 		// num || string '100%', '100px'
+        x: {
+            start: { unit: '%', value: 0 },
+            end: { unit: '%', value: 0 }
+        },
+        y: {
+            start: { unit: '%', value: 0 },
+            end: { unit: '%', value: 0 }
+        },
         easing: false,
-        responsive: false
+        responsive: null
     },
     rotate: {
-        axis: 'z', 		// string 'x', 'y', 'z', 'xy', 'xz', 'yz', 'xyz'
-        start: 0,		// num
-        end: 360,		// num
+        start: { value: 0 },
+        end: { value: 0 },
+        x: {
+            start: { value: 0 },
+            end: { value: 0 }
+        },
+        y: {
+            start: { value: 0 },
+            end: { value: 0 }
+        },
+        z: {
+            start: { value: 0 },
+            end: { value: 0 }
+        },
         easing: false,
-        responsive: false
+        responsive: null
     },
     scale: {
-        axis: 'xy', 	// string 'x', 'y', 'xy'
-        start: 0,		// num
-        end: 100,		// num
+        start: { value: 100 },
+        end: { value: 100 },
+        x: {
+            start: { value: 100 },
+            end: { value: 100 }
+        },
+        y: {
+            start: { value: 100 },
+            end: { value: 100 }
+        },
+        z: {
+            start: { value: 100 },
+            end: { value: 100 }
+        },
         easing: false,
-        responsive: false
+        responsive: null
     },
     fade: {
-        start: 0,		// num 0 - 100
-        end: 100,		// num 0 - 100
+        start: { value: 100 },
+        end: { value: 100 },
         easing: false,
-        responsive: false
+        responsive: null
+    },
+    saturate: {
+        start: { value: 100 },
+        end: { value: 100 },	
+        responsive: null
     },
     blur: {
-        start: 0,		// num 0 - 100
-        end: 100,		// num 0 - 100
-        responsive: false
+        start: { value: 0 },
+        end: { value: 0 },	
+        responsive: null
     }
 }
+
+
+/**
+ * Extracts and structures start and end values for animation properties.
+ *
+ * This function processes an object containing movement values (startX, endX, startY, endY, etc.)
+ * and returns a structured format containing extracted values with proper defaults.
+ *
+ * @param {Object} obj - The object containing animation data.
+ * @param {Object} defaultObj - The object containing default values for fallback.
+ * 
+ * @returns {Object} - A structured object with extracted start and end values.
+ */
+function extractStartEndData(obj, defaultObj) {
+    
+    // Normalize object keys: Convert all keys to lowercase
+    const normalizedObj = Object.keys(obj).reduce((acc, key) => {
+        acc[key.toLowerCase()] = obj[key];
+        return acc;
+    }, {});
+
+    // Process top-level 'start' or 'end' properties and return immediately
+    if ('start' in normalizedObj || 'end' in normalizedObj) {
+        return {
+            start: 'start' in normalizedObj ? splitValueUnit(normalizedObj.start) : defaultObj.start,
+            end: 'end' in normalizedObj ? splitValueUnit(normalizedObj.end) : defaultObj.end
+        };
+    }
+
+    // Process axis-based values (x, y, z)
+    const axes = ['x', 'y', 'z'];
+    const newObj = {}
+
+    for (const axis of axes) {
+        if (defaultObj[axis] && (normalizedObj[`start${axis}`] || normalizedObj[`end${axis}`])) {
+            newObj[axis] = {
+                start: normalizedObj[`start${axis}`]
+                    ? splitValueUnit(normalizedObj[`start${axis}`]) 
+                    : defaultObj[axis].start,
+
+                end: normalizedObj[`end${axis}`]
+                    ? splitValueUnit(normalizedObj[`end${axis}`]) 
+                    : defaultObj[axis].end
+            };
+        }
+    }
+    return newObj;
+}
+
 
 /**
  * Extracts animation data attributes from an element and returns a structured animation configuration.
@@ -48,150 +128,218 @@ export const animationDefaults = {
  * 
  * @returns {Array<Object>} - An array of animation objects, each containing a specific animation type and its properties.
  */
-export function setAnimationData(el) {
-    var dataAnimationMove = el.getAttribute( 'data-scrollage-move' );
-    var dataAnimationRotate = el.getAttribute( 'data-scrollage-rotate' );
-    var dataAnimationScale = el.getAttribute( 'data-scrollage-scale' );
-    var dataAnimationFade = el.getAttribute( 'data-scrollage-fade' );
-    var dataAnimationBlur = el.getAttribute( 'data-scrollage-blur' );
+export function getAnimationData(el) {
+    const animations = [];
+    const animationTypes = Object.keys(ANIMATION_DEFAULTS);
 
-    var animations = [];
-    if (dataAnimationMove && dataAnimationMove !== 'false') {
-        animations.push({
-            move: {	...animationDefaults.move, ...JSON.parse(dataAnimationMove) }
-        });
+    for (const type of animationTypes) {
+        const attrName = `data-scrollage-${type}`;
+        const data = el.getAttribute(attrName);
+
+        if (data) {
+            const parsedData = safeParseJSON(data, attrName);
+            const responsiveData = parsedData.responsive || {};
+
+            // Extract responsive animation settings
+            const responsiveConfig = Object.keys(responsiveData).reduce((acc, breakpoint) => {
+                acc[breakpoint] = extractStartEndData(responsiveData[breakpoint], ANIMATION_DEFAULTS[type]);
+                return acc;
+            }, {});
+
+            animations.push({
+                [type]: {
+                    ...extractStartEndData(parsedData, ANIMATION_DEFAULTS[type]),
+                    responsive: Object.keys(responsiveData).length ? responsiveConfig : undefined,
+                    easing: parsedData.easing || undefined
+                }
+            });
+        }
     }
-    if (dataAnimationRotate && dataAnimationRotate !== 'false') {
-        animations.push({
-            rotate: { ...animationDefaults.rotate, ...JSON.parse(dataAnimationRotate)	},
-        });
-    }
-    if (dataAnimationScale && dataAnimationScale !== 'false') {
-        animations.push({
-            scale: { ...animationDefaults.scale,	...JSON.parse(dataAnimationScale) }
-        });
-    }
-    if (dataAnimationFade && dataAnimationFade !== 'false') {
-        animations.push({
-            fade: {	...animationDefaults.fade, ...JSON.parse(dataAnimationFade) }
-        });
-    }
-    if (dataAnimationBlur && dataAnimationBlur !== 'false') {
-        animations.push({
-            blur: {	...animationDefaults.blur, ...JSON.parse(dataAnimationBlur) }
-        });
-    }
+
     return animations;
 }
 
 
-// Applies easing if enabled and returns calculated animation value
-export function getAnimationProgress(start, end, progress = 0, easing = false ) {
-    if (easing && typeof easing === 'string') {
-        progress = EasingFuncs[easing](progress);
+/**
+ * Calculates the interpolated animation progress between a start and end value.
+ *
+ * - If an easing function is provided, it applies the easing to the progress.
+ * - Ensures progress is clamped between `0` and `1` to prevent unexpected results.
+ * - Uses `EasingFuncs` to retrieve the easing function safely.
+ *
+ * @param {number} start - The starting value of the animation.
+ * @param {number} end - The ending value of the animation.
+ * @param {number} [progress=0] - The current progress (between 0 and 1).
+ * @param {string|false} [easing=false] - The easing function name (case-insensitive) or `false` for linear animation.
+ * 
+ * @returns {number} - The calculated interpolated value.
+ */
+function getAnimationProgress(start, end, progress = 0, easing = false ) {
+
+    // Clamp progress between 0 and 1
+    progress = Math.max(0, Math.min(1, progress));
+
+    // Apply easing if provided and valid
+    if (easing && EasingFuncs[easing.toLowerCase()]) {
+        progress = EasingFuncs[easing.toLowerCase()](progress);
     }
-    return Math.round( start + (end - start) * progress );
+
+    return start + (end - start) * progress;
 }
 
 
-// Animation move
-export function move(animationData, progress, targetSize, breakpoint) {
-    let valueX = 0,
-        valueY = 0;
+/**
+ * Calculates the transform `translate` values for an element.
+ *
+ * - Converts percentage-based movement values to pixel values relative to `rangeSize`.
+ * - Uses `getAnimationProgress()` to interpolate movement based on scroll progress.
+ *
+ * @param {Object} animationData - The movement animation configuration.
+ * @param {number} progress - The current animation progress (0 to 1).
+ * @param {Object} rangeSize - The range dimensions used for percentage calculations.
+ * @param {Object} elSize - The target element dimensions.
+ * @param {Object} winSize - The window dimensions for vw/vh unit calculation.
+ * 
+ * @returns {string} - The computed `translate` CSS transformation string.
+ */
+export function move(animationData, progress, rangeSize, elSize, winSize) {
 
-    if (animationData.axis.toLowerCase().includes('x')) {
-        let startX = 0,
-            endX = 100;
+    const calculateMovement = (axis) => {
+        if (!animationData[axis]) return 0;
 
-        if (animationData.startX !== 0) {
-            let startXValue = splitValueUnit(animationData.startX)?.value || 0;
-            let startXUnit = splitValueUnit(animationData.startX)?.unit || '%';
+        const { start, end } = animationData[axis];
 
-            if (animationData.responsive[breakpoint]?.startX) {
-                startXValue = splitValueUnit(animationData.responsive[breakpoint].startX)?.value || 0;
-                startXUnit = splitValueUnit(animationData.responsive[breakpoint].startX)?.unit || '%';
-            }
-            startX = (startXUnit == 'px' ? startXValue*100 : targetSize * startXValue);
-        }
-        if (animationData.endX !== 0) {
-            let endXValue = splitValueUnit(animationData.endX)?.value || 0;
-            let endXUnit = splitValueUnit(animationData.endX)?.unit || '%';
+        const startValue = calculateUnitValue(start.unit, start.value, winSize, rangeSize[axis], elSize[axis]);
+        const endValue = calculateUnitValue(end.unit, end.value, winSize, rangeSize[axis], elSize[axis]);
 
-            if (animationData.responsive[breakpoint]?.endX) {
-                endXValue = splitValueUnit(animationData.responsive[breakpoint].endX)?.value || 0;
-                endXUnit = splitValueUnit(animationData.responsive[breakpoint].endX)?.unit || '%';
-            }
-            endX = (endXUnit == 'px' ? endXValue*100 : targetSize * endXValue);
-        }
-        valueX = getAnimationProgress(startX, endX, progress, animationData.easing) / 100;
-    }
+        return getAnimationProgress(startValue, endValue, progress, animationData.easing);
+    };
 
-    if (animationData.axis.toLowerCase().includes('y')) {
-        let startY = 0,
-            endY = 100;
+    const valueX = roundValue(calculateMovement('x'));
+    const valueY = roundValue(calculateMovement('y'));
 
-        if (animationData.startY !== 0) {
-            let startYValue = splitValueUnit(animationData.startY)?.value || 0;
-            let startYUnit = splitValueUnit(animationData.startY)?.unit || '%';
-
-            if (animationData.responsive[breakpoint]?.startY) {
-                startYValue = splitValueUnit(animationData.responsive[breakpoint]?.startY)?.value || 0;
-                startYUnit = splitValueUnit(animationData.responsive[breakpoint]?.startY)?.unit || '%';
-            }
-            startY = (startYUnit == 'px' ? startYValue*100 : targetSize * startYValue);
-        }
-        if (animationData.endY !== 0) {
-            let endYValue = splitValueUnit(animationData.endY)?.value || 0;
-            let endYUnit = splitValueUnit(animationData.endY)?.unit || '%';
-
-            if (animationData.responsive[breakpoint]?.endY) {
-                startYValue = splitValueUnit(animationData.responsive[breakpoint]?.endY)?.value || 0;
-                startYUnit = splitValueUnit(animationData.responsive[breakpoint]?.endY)?.unit || '%';
-            }
-            endY = (endYUnit == 'px' ? endYValue*100 : targetSize * endYValue);
-        }
-        valueY = getAnimationProgress(startY, endY, progress, animationData.easing) / 100;
-    }
-
-    return 'translate:' + valueX + 'px ' + valueY + 'px';
+    return `translate(${valueX}px, ${valueY}px)`;
 }
 
 
-// Animation rotate
+/**
+ * Calculates the transform `rotate` values for an element.
+ *
+ * - Supports independent rotation on the X, Y, and Z axes.
+ * - Uses `getAnimationProgress()` to interpolate rotation values based on scroll progress.
+ *
+ * @param {Object} animationData - The rotation animation configuration.
+ * @param {number} progress - The current animation progress (0 to 1).
+ * 
+ * @returns {string} - The computed `transform` CSS property with rotations.
+ */
 export function rotate(animationData, progress) {
-    let value = getAnimationProgress(animationData.start, animationData.end, progress, animationData.easing);
+    const calculateRotation = (axis) => {
+        if (!animationData[axis]) return null;
+        
+        return getAnimationProgress(
+            animationData[axis].start.value,
+            animationData[axis].end.value,
+            progress,
+            animationData.easing
+        );
+    };
 
-    if ('z' !== animationData.axis.toLowerCase()) {
-        let axis = animationData.axis.toLowerCase().split('');
-        return 'rotate:' + (axis.includes('x') ? 1 : 0) 
-                + ' ' + (axis.includes('y') ? 1 : 0) 
-                + ' ' + (axis.includes('z') ? 1 : 0) 
-                + ' ' + (value + 'deg');
-    } else {
-        return 'rotate:' + value + 'deg';
+    // Prioritize 'start' and 'end' values, if defined
+    if (animationData.start && animationData.end) {
+        const value = getAnimationProgress(animationData.start.value, animationData.end.value, progress, animationData.easing);
+        return `rotate(${roundValue(value)}deg)`;
     }
+
+    const rotations = [];
+    if (animationData.x) rotations.push(`rotateX(${roundValue(calculateRotation('x'))}deg)`);
+    if (animationData.y) rotations.push(`rotateY(${roundValue(calculateRotation('y'))}deg)`);
+    if (animationData.z) rotations.push(`rotateZ(${roundValue(calculateRotation('z'))}deg)`);
+
+    return rotations.join(' ');
 }
 
-// Animation scale
+
+/**
+ * Calculates the CSS scale transform values for an element.
+ *
+ * - Supports independent scaling on the X, Y, and Z axes.
+ * - Uses `getAnimationProgress()` to interpolate scale values based on scroll progress.
+ * 
+ * @param {Object} animationData - The scale animation configuration.
+ * @param {number} progress - The current animation progress (0 to 1).
+ * 
+ * @returns {string} - The computed `transform` CSS property with scaling.
+ */
 export function scale(animationData, progress) {
-    let value = getAnimationProgress(animationData.start, animationData.end,progress, animationData.easing) / 100;
+    const calculateScale = (axis) => {
+        if (!animationData[axis]) return null;
+        
+        return getAnimationProgress(
+            animationData[axis].start.value/100,
+            animationData[axis].end.value/100,
+            progress,
+            animationData.easing
+        );
+    };
 
-    if ('xy' !== animationData.axis.toLowerCase()) {
-        return 'scale:' + ('x' == animationData.axis.toLowerCase() ? value : 1) 
-                + ' ' + ('y' == animationData.axis.toLowerCase() ? value : 1);
-    } else {
-        return 'scale:' + value;
+    // Prioritize 'start' and 'end' values, if defined
+    if (animationData.start && animationData.end) {
+        const value = getAnimationProgress(animationData.start.value/100, animationData.end.value/100, progress, animationData.easing);
+        return `scale(${ roundValue(value, 2) })`;
     }
+
+    const scales = [];
+    if (animationData.x) scales.push(`scaleX(${calculateScale('x')})`);
+    if (animationData.y) scales.push(`scaleY(${calculateScale('y')})`);
+
+    return scales.join(' ');
 }
 
-// Animation fade
+
+/**
+ * Calculates the CSS opacity value for a fade animation.
+ *
+ * - Uses `getAnimationProgress()` to interpolate opacity based on scroll progress.
+ *
+ * @param {Object} animationData - The fade animation configuration.
+ * @param {number} progress - The current animation progress (0 to 1).
+ * 
+ * @returns {string} - The computed `opacity` CSS property.
+ */
 export function fade(animationData, progress) {
-    let value = getAnimationProgress(animationData.start, animationData.end, progress, animationData.easing) / 100;
-    return 'opacity:' + value;
+    const value = getAnimationProgress(animationData.start.value, animationData.end.value, progress, animationData.easing);
+    return roundValue(value / 100, 2);
 }
 
-// Animation blur
+
+/**
+ * Calculates the CSS saturate filter value for a saturate animation.
+ *
+ * - Uses `getAnimationProgress()` to interpolate saturation based on scroll progress.
+ *
+ * @param {Object} animationData - The saturate animation configuration.
+ * @param {number} progress - The current animation progress (0 to 1).
+ * 
+ * @returns {string} - The computed `filter: saturate(%)` CSS property.
+ */
+export function saturate(animationData, progress) {
+    const value = getAnimationProgress(animationData.start.value, animationData.end.value, progress);
+    return `saturate(${roundValue(value, 0)}%)`;
+}
+
+
+/**
+ * Calculates the CSS blur filter value for a blur animation.
+ *
+ * - Uses `getAnimationProgress()` to interpolate blur intensity based on scroll progress.
+ *
+ * @param {Object} animationData - The blur animation configuration.
+ * @param {number} progress - The current animation progress (0 to 1).
+ * 
+ * @returns {string} - The computed `filter: blur(px)` CSS property.
+ */
 export function blur(animationData, progress) {
-    let value = getAnimationProgress(animationData.start, animationData.end, progress);
-    return 'filter:blur(' + value + 'px)';
+    const value = getAnimationProgress(animationData.start.value, animationData.end.value, progress);
+    return `blur(${roundValue(value, 0)}px)`;
 }
