@@ -1,7 +1,7 @@
 /**
  * ScrollageJS - A lightweight library for animating elements based on scroll position.
  *
- * @version 0.9.3
+ * @version 0.9.5
  * @author Jakob Wiens
  * @see {@link https://github.com/jakobwiens7/scrollage-js} Project Repository
  * @see {@link https://scrollage.de} Official Website

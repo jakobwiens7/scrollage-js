@@ -1,6 +1,6 @@
 # ScrollageJS
 
-ScrollageJS is a lightweight JavaScript library that animates elements based on the scroll position. It calculates an element’s animation progress relative to a defined scroll range and applies various CSS transformations and effects as the user scrolls.
+ScrollageJS is a lightweight JavaScript library that animates elements based on the scroll position. It calculates an element’s animation progress relative to a defined timeline range and applies various CSS transformations and effects as the user scrolls.
 
 ## Installation
 
@@ -10,21 +10,15 @@ You can include ScrollageJS in your project by adding the compiled JavaScript fi
 
 ## Usage
 
-    <div class="range">
-        <div class="scrollage"
-            data-scrollage-range=".range"
-            data-scrollage-move='{"startY":"-60px", "endY":"30%"}'
-        >
+    <div class="scope">
+        <div class="scrollage" data-animation-move='{"startY":"-60px", "endY":"30%"}'>
             My animated element
         </div>
     </div>
 
-- `.scrollage`: This element will be animated based on scrolling.
-- `.range`: Optional. Serves as the scroll range that controls the scrollage element's animation progress.
-
 ScrollageJS uses several data attributes on the animated elements to configure their behavior:
 
-### `data-scrollage-move`
+### `data-animation-move`
 
 Specifies the movement animation parameters via JSON object:
 
@@ -47,9 +41,9 @@ Specifies the movement animation parameters via JSON object:
 - `responsive`: Optional. Allows different values per breakpoint. Default: `false`.
 - `easing`: Optional. Specifies the easing function to use. Default: `false`.
 
-Note: Percentages refer to the range or wrapper element.
+Note: Percentages refer to the range or source element.
 
-### `data-scrollage-rotate`
+### `data-animation-rotate`
 
 Defines rotation animation parameters via JSON object:
 
@@ -77,7 +71,7 @@ or
 - `responsive`: Optional. Allows different values per breakpoint. Default: `false`.
 - `easing`: Optional. Easing function. Default: `false`.
 
-### `data-scrollage-scale`
+### `data-animation-scale`
 
 Configures scaling animations via JSON object:
 
@@ -104,7 +98,7 @@ or
 - `responsive`: Optional. Allows different values per breakpoint. Default: `false`.
 - `easing`: Optional. Easing function. Default: `false`.
 
-### `data-scrollage-fade`
+### `data-animation-fade`
 
 Specifies fade (opacity) animation settings via JSON object:
 
@@ -118,7 +112,7 @@ Specifies fade (opacity) animation settings via JSON object:
 - `responsive`: Optional. Allows different values per breakpoint. Default: `false`.
 - `easing`: Optional. Easing function. Default: `false`.
 
-### `data-scrollage-saturate`
+### `data-animation-saturate`
 
 Configures saturation animations via JSON object:
 
@@ -133,7 +127,7 @@ Configures saturation animations via JSON object:
 - `responsive`: Optional. Allows different values per breakpoint. Default: `false`.
 - `easing`: Optional. Easing function. Default: `false`.
 
-### `data-scrollage-blur`
+### `data-animation-blur`
 
 Configures blur effect animations via JSON object:
 
@@ -149,32 +143,23 @@ Configures blur effect animations via JSON object:
 
 Note: This can heavily impact performance, especially on lower end devices! You have been warned!
 
-### `data-scrollage-range`
+### `data-timeline-scope`
 
-By default, ScrollageJS uses the entire page (`documentElement`) as the scroll range, that controls the animation progress. However, you can define any element as the scroll range by specifying a CSS selector. This ensures animations start when the element enters the viewport and end when it leaves.
+By default, ScrollageJS uses the entire page (`documentElement`) as the scroll timeline. However, you can define any element as a timeline scope by specifying a CSS selector. This ensures animations start when the scope element enters the viewport and end when it leaves.
 
 **Examples:**  
-`data-scrollage-range="#my-section"`  
-`data-scrollage-range="section.animation-range"`
+`data-timeline-scope="#my-section"`  
+`data-timeline-scope="section.timeline-scope"`
 
-### `data-scrollage-offset`
+### `data-animation-range`
 
 Adjust the starting and ending positions of the animation by applying an offset to the scroll range. In vertical mode, this modifies the top and bottom positions. In horizontal mode, it affects the left and right positions. You can use positive or negative numbers with `%`, `px`, `vh` or `vw` units.
 
 **Examples:**  
-`data-scrollage-offset="-30%"` or `data-scrollage-offset="-30"`  
-`data-scrollage-offset="15vh"` or `data-scrollage-offset="15vw"`  
-`data-scrollage-offset="60px"`
-
-### `data-scrollage-offset-start` & `data-scrollage-offset-end`
-
-Adjust the starting and ending positions of the animation by applying individual offsets to the scroll range. In vertical mode, this modifies the top and bottom positions. In horizontal mode, it affects the left and right positions. You can use positive or negative numbers with `%`, `px`, `vh` or `vw` units.
-
-**Examples:**  
-`data-scrollage-offset-end="30%"` or `data-scrollage-offset-end="30"`  
-`data-scrollage-offset-start="-15vh"`  
-`data-scrollage-offset-end="15vw"`  
-`data-scrollage-offset-start="60px"`
+`data-animation-range="30 -30"` or `data-animation-range="30% -30%"`  
+`data-animation-range="15vh -15vh"` or `data-animation-range="15vw -15vw"`  
+`data-animation-range="60px -60px"`  
+`data-animation-range="-10vh 120px"`
 
 ## JavaScript Initialization
 
@@ -206,7 +191,7 @@ Controls whether scrolling is considered `vertical` or `horizontal`. Default: `'
 
 An array of three numeric values to define responsive breakpoints, e.g. `[640, 980, 1280]`. Default: `[781, 1024, 1366]`.
 
-### `wrapper`
+### `source`
 
 The element that serves as the scroll container. Default: `documentElement`.
 
@@ -216,10 +201,10 @@ Triggers allow you to add or remove CSS classes when a specific scroll position 
 
     triggers: [
         {
-            range: "#intro",                // Optional: The element/selector string, that defines the trigger range. Defaults to the wrapper or `documentElement`.
+            range: "#intro",                // Optional: The element/selector string, that defines the trigger range. Defaults to the source or `documentElement`.
             position: 100 | "250px",        // Optional: The position relative to the range element at which to trigger (number in percentage or string with `%`, `px`, `vh`, `vw`). Defaults to `0`.
             class: "has-triggered-intro",   // The class, thats being added to the target element on trigger.
-            target: "#class-target"         // Optional: The element/selector target, to which the class is added. Use `_self` to target the range element itself. Defaults to the wrapper or `documentElement`.
+            target: "#class-target"         // Optional: The element/selector target, to which the class is added. Use `_self` to target the range element itself. Defaults to the source or `documentElement`.
         }
     ]
 
@@ -243,10 +228,10 @@ Here’s a complete example combining HTML structure and JavaScript initializati
         <body>
             <div class="range">
                 <div class="scrollage"
-                    data-scrollage-range=".range"
-                    data-scrollage-offset="-30%"
-                    data-scrollage-move='{"endY": 100}'
-                    data-scrollage-fade='{"start: 0}'
+                    data-timeline-scope=".range"
+                    data-animation-range="20% -20%"
+                    data-animation-move='{"endY": 100}'
+                    data-animation-fade='{"start: 0}'
                 >
                     Animated Element
                 </div>
@@ -257,8 +242,8 @@ Here’s a complete example combining HTML structure and JavaScript initializati
                 const scrollageInstance = new Scrollage('.scrollage', {
 
                     triggers: [{
-                        range: '.range',
-                        class: 'has-triggered-range',
+                        scope: '.scope',
+                        class: 'has-triggered',
                         position: '50%',
                         target: '_self'
                     }]
@@ -272,7 +257,7 @@ Here’s a complete example combining HTML structure and JavaScript initializati
 ### `init()`
 
 Re-caches and updates all animated elements and triggers.  
-Call this method to manually reinitialize the Scrollage instance after dynamic DOM changes or layout adjustments. It recalculates the dimensions of the scroll wrapper, updates the scroll positions, and re-attaches necessary event listeners.
+Call this method to manually reinitialize the Scrollage instance after dynamic DOM changes or layout adjustments. It recalculates the dimensions of the scroll timeline source, updates the scroll positions, and re-attaches necessary event listeners.
 
 ### `update()`
 

@@ -90,13 +90,15 @@ export function roundValue(value, decimals = 1) {
 
 
 /**
- * Validates whether a given wrapper is a valid DOM element.
+ * Validates whether an element / selector is a valid DOM element.
  *
  * - Allows both selector strings and direct element references.
  * - Checks if the element exists in the DOM.
  *
- * @param {string|HTMLElement|null} wrapper - The selector or element to validate.
- * @returns {HTMLElement|null} - The valid wrapper element or `null` if invalid.
+ * @param {string|HTMLElement|null} el - The selector or element to validate.
+ * @param {string} context - A string that describes the context of the validated element
+ * 
+ * @returns {HTMLElement|null} - The valid element or `null` if invalid.
  */
 export function validateEl(el, context = 'element') {
 

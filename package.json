@@ -1,6 +1,6 @@
 {
   "name": "scrollagejs",
-  "version": "0.9.3",
+  "version": "1.0.0",
   "description": "A lightweight JavaScript library that animates elements based on the scroll position.",
   "author": "Jakob Wiens",
   "license": "MIT",
@@ -18,11 +18,12 @@
   },
   "devDependencies": {
     "@babel/preset-env": "latest",
-    "webpack": "^5.97.1",
-    "webpack-cli": "^6.0.1",
+    "css-loader": "^6.8.1",
+    "mini-css-extract-plugin": "^2.7.2",
+    "resize-observer-polyfill": "^1.5.1",
     "sass": "^1.69.5",
     "sass-loader": "^13.3.2",
-    "css-loader": "^6.8.1",
-    "mini-css-extract-plugin": "^2.7.2"
+    "webpack": "^5.97.1",
+    "webpack-cli": "^6.0.1"
   }
 }
