@@ -185,26 +185,40 @@ When initializing ScrollageJS, you can customize its behavior via the options ob
 
 ### `direction`
 
-Controls whether scrolling is considered `vertical` or `horizontal`. Default: `'vertical'`.
+Controls whether scrolling is considered `vertical` or `horizontal`.  
+Default: `'vertical'`.
 
 ### `breakpoints`
 
-An array of three numeric values to define responsive breakpoints, e.g. `[640, 980, 1280]`. Default: `[781, 1024, 1366]`.
+An array of three numeric values to define responsive breakpoints, e.g. `[640, 980, 1280]`.  
+Default: `[781, 1024, 1366]`.
 
 ### `source`
 
-The element that serves as the scroll container. Default: `documentElement`.
+The element that serves as the scroll container.  
+Default: `documentElement`.
 
 ### `triggers`
 
-Triggers allow you to add or remove CSS classes when a specific scroll position is reached. This is useful for applying effects, styling changes, or triggering external behaviors. Default: `[]`
+Triggers allow you to add or remove CSS classes when a specific scroll position is reached. This is useful for applying effects, styling changes, or triggering external behaviors.  
+Default: `[]`
 
     triggers: [
         {
-            range: "#intro",                // Optional: The element/selector string, that defines the trigger range. Defaults to the source or `documentElement`.
-            position: 100 | "250px",        // Optional: The position relative to the range element at which to trigger (number in percentage or string with `%`, `px`, `vh`, `vw`). Defaults to `0`.
-            class: "has-triggered-intro",   // The class, thats being added to the target element on trigger.
-            target: "#class-target"         // Optional: The element/selector target, to which the class is added. Use `_self` to target the range element itself. Defaults to the source or `documentElement`.
+            scope: "#intro",
+            // Optional: The element/selector string, that defines the scroll-timeline scope.
+            // Defaults to the scroll-container `source` or `documentElement`.
+
+            position: 100 | "250px",
+            // Optional: The position relative to the range element at which to trigger
+            // (number in percentage or string with `%`, `px`, `vh`, `vw`). Defaults to `0`.
+
+            class: "has-triggered-intro",
+            // The class, thats being added to the target element on trigger.
+
+            target: "#class-target"
+            // Optional: The element/selector target, to which the class is added.
+            // Use `_self` to target the range element itself. Defaults to the source or `documentElement`.
         }
     ]
 
