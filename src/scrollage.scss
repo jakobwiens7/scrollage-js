@@ -1,15 +1,15 @@
-[data-scrollage-move],
-[data-scrollage-rotate],
-[data-scrollage-scale] {
+[data-animation-move],
+[data-animation-rotate],
+[data-animation-scale] {
     transform-origin: center;
     will-change: transform;
 }
 
-[data-scrollage-fade] {
+[data-animation-fade] {
     will-change: opacity;
 }
 
-[data-scrollage-blur],
-[data-scrollage-saturate] {
+[data-animation-blur],
+[data-animation-saturate] {
     will-change: filter;
 }

@@ -1,1 +1,1 @@
-[data-scrollage-move],[data-scrollage-rotate],[data-scrollage-scale]{transform-origin:center;will-change:transform}[data-scrollage-fade]{will-change:opacity}[data-scrollage-blur],[data-scrollage-saturate]{will-change:filter}
+[data-animation-move],[data-animation-rotate],[data-animation-scale]{transform-origin:center;will-change:transform}[data-animation-fade]{will-change:opacity}[data-animation-blur],[data-animation-saturate]{will-change:filter}
