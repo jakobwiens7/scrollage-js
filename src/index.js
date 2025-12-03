@@ -44,7 +44,7 @@ import './scrollage.scss';
 class Scrollage {
 
 	static DEBUG_MODE = false;
-    static VERSION = '1.0.0';
+    static VERSION = '1.0.1';
 
 	// Default configuration settings for Scrollage.
     static DEFAULT_OPTIONS = {
