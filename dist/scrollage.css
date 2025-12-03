@@ -1,0 +1,1 @@
+[data-animation-move],[data-animation-rotate],[data-animation-scale]{transform-origin:center;will-change:transform}[data-animation-fade]{will-change:opacity}[data-animation-blur],[data-animation-saturate]{will-change:filter}

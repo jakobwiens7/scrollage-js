@@ -2,7 +2,7 @@
 import ResizeObserver from 'resize-observer-polyfill';
 
 // Internal Dependencies
-import { supportsPassiveEvents, debounce, splitValueUnit, calculateUnitValue, validateEl } from './utils.js';
+import { supportsPassiveEvents, debounce, splitValueUnit, calculateUnitValue } from './utils.js';
 import { getAnimationData, move, rotate, scale, fade, blur, saturate } from './animation.js';
 import { getCurrentBreakpoint, isValidBreakpoints } from './breakpoints.js';
 
@@ -13,7 +13,7 @@ import './scrollage.scss';
 /**
  * ScrollageJS - A lightweight library for animating elements based on scroll position.
  *
- * @version 1.0.0
+ * @version 1.0.1
  * @author Jakob Wiens
  * @see {@link https://github.com/jakobwiens7/scrollage-js} Project Repository
  * @see {@link https://scrollage.de} Official Website
@@ -43,11 +43,8 @@ import './scrollage.scss';
  */
 class Scrollage {
 
-	// Current Scrollage version
-    static version = '1.0.0';
-
-	// Determines if the browser supports passive event listeners.
-	static supportsPassive = supportsPassiveEvents();
+	static DEBUG_MODE = false;
+    static VERSION = '1.0.0';
 
 	// Default configuration settings for Scrollage.
     static DEFAULT_OPTIONS = {
@@ -55,8 +52,20 @@ class Scrollage {
         source: null,
 		breakpoints: [781, 1024, 1366],
         triggers: [],
+        initialize: true
         // TO-DO: callback: function()
     };
+
+	// Determines if the browser supports passive event listeners.
+	static supportsPassive = supportsPassiveEvents();
+
+	// Static handler for all instances
+	static handleResizeEvent() {
+		Scrollage.instances.forEach( instance => instance.init() );
+	}
+
+	static instances = [];
+	static isInitialized = false;
 
 
 	/**
@@ -68,6 +77,9 @@ class Scrollage {
      * @throws {Warning} Logs a warning if initialized before the DOM is fully loaded.
      */
     constructor( el, options = {} ) {
+		// Add instance to the static list
+		Scrollage.instances.push(this);
+
 		// Warn when DOM is not ready
         if (document.readyState === 'loading') {
             console.warn('ScrollageJS: DOM is not fully loaded. Ensure initialization happens after `DOMContentLoaded`.');
@@ -90,7 +102,7 @@ class Scrollage {
 		this.blocks = [];
 		this.triggers = [];
 
-		this.init();
+        if (this.options.initialize) this.init();
     }
 
 
@@ -98,28 +110,30 @@ class Scrollage {
 	 * Initializes the scrollage system and caches all necessary element values.
 	 */
 	init() {
+		this.destroy();
+
 		// Warn when 'prefers-reduced-motion' is enabled
 		this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-		if (this.reducedMotion) {
-			console.warn('ScrollageJS: "prefers-reduced-motion" is enabled. Animations will be disabled.');
-		}
+		if (this.reducedMotion) console.warn('ScrollageJS: "prefers-reduced-motion" is enabled. Animations will be disabled.');
 
-		// Validate elements and return early otherwise
+		// Validate elements (and DON'T return early otherwise!)
 		this.elems = (typeof this.el === 'string') 
 			? document.querySelectorAll(this.el) 
 			: this.el instanceof NodeList ? this.el : [this.el];
-		if (!this.elems || !this.elems.length) return;
+		//if (!this.elems || !this.elems.length) return;
 
 		this.isVertical = this.options.direction !== 'horizontal';
 
 		// Validate scroll-container source and set to default otherwise
 		if (this.options.source) {
-			this.source = validateEl(this.options.source, 'source');
+			this.source = this.validateEl(this.options.source, 'source');
 			this.isDocumentSource = false;
-		} else if (!this.options.source || !this.source) {
+		}
+		if (!this.options.source || !this.source) {
 			this.source = document.documentElement || document.body;
 			this.isDocumentSource = true;
 		}
+
 		this.sourceSizes = { x: this.source.scrollWidth, y: this.source.scrollHeight };
 		this.wrapperSizes = { x: this.source.offsetWidth, y: this.source.offsetHeight };
 		this.winSizes = { x: window.innerWidth, y: window.innerHeight };
@@ -140,40 +154,85 @@ class Scrollage {
 		// Setup and cache
 		this.cacheBlocks();
 		this.cacheTriggers();
+		
 
-		// Window resize & orientation change listeners
-		window.addEventListener(
-			"resize", 
-			debounce(this.init.bind(this))
-		);
-		window.addEventListener(
-			'orientationchange', 
-			debounce(this.init.bind(this))
-		);
+		// Setup Listeners & observers initially
+		this.setupListeners();
 
-		// Scroll & touch listeners
-		(this.options.source ? this.source : window).addEventListener(
+		// Update initially
+		this.update();
+
+		Scrollage.isInitialized = true;
+
+		// DEBUGGING
+		if (Scrollage.DEBUG_MODE) {
+			console.log( this );
+		}
+	}
+
+
+	setupListeners() {
+		// Add resize & orientationchange listeners at class level
+		if (!Scrollage.isInitialized) {
+			Scrollage.debouncedInit = debounce(Scrollage.handleResizeEvent, 300);
+			
+			window.addEventListener('resize', Scrollage.debouncedInit);
+			window.addEventListener('orientationchange', Scrollage.debouncedInit);
+		}
+
+		// Add scroll & touchmove listeners at instance level
+		(this.options.source ? this.source : window)?.addEventListener(
 			'scroll', 
 			this.update, 
 			Scrollage.supportsPassive ? { passive: true } : false
 		);
-		(this.options.source ? this.source : window).addEventListener(
+		(this.options.source ? this.source : window)?.addEventListener(
 			'touchmove',
 			this.update,
 			Scrollage.supportsPassive ? { passive: true } : false
 		);
 
-		// Source resize observer
+		// Add resize observer at instance level
 		if (!this.resizeObserver) {
-			this.resizeObserver = new ResizeObserver(debounce(() => this.init(), 100));
+			this.resizeObserver = new ResizeObserver(debounce(() => this.init()));
 			this.resizeObserver.observe(this.source);
 		}
 
-		// Update initially
-		this.update();
+		this.isActive = true;
+	}
 
-		// WIP >>>
-		console.log(this);
+	
+	/**
+	 * Validates whether an element / selector is a valid DOM element.
+	 *
+	 * - Allows both selector strings and direct element references.
+	 * - Checks if the element exists in the DOM.
+	 *
+	 * @param {string|HTMLElement|null} el - The selector or element to validate.
+	 * @param {string} context - A string that describes the context of the validated element
+	 * 
+	 * @returns {HTMLElement|null} - The valid element or `null` if invalid.
+	 */
+	validateEl(el, context = 'element') {
+
+		// If it's already an element, return it directly
+		if (el instanceof HTMLElement) {
+			return el;
+		}
+
+		// If it's a string, try to select the element
+		if (typeof el === 'string') {
+			try {
+				document.querySelector(el); // Test if selector is valid
+				const selectedEl = document.querySelector(el);
+				if (selectedEl) return selectedEl;
+			} catch (e) {
+				console.warn(`ScrollageJS: Invalid selector "${el}" in ${context}.`);
+				return null;
+			}
+		}
+
+		return null;
 	}
 
 
@@ -181,7 +240,7 @@ class Scrollage {
 	 * Caches and initializes scroll blocks for Scrollage.
 	 *
 	 * This function iterates over the scrollage elements (`this.elems`), extracts necessary 
-	 * data attributes, stores their original styles, determines their scroll-timeline scope, 
+	 * data attributes, stores their original styles, determines their scroll-timeline range, 
 	 * calculates their initial progress, and stores animation data.
 	 * 
 	 * @returns {void}
@@ -194,16 +253,16 @@ class Scrollage {
 			const el = this.elems[i];
 
 			// Extract scroll-related data attributes
-			const dataScopeSelector = el.getAttribute( 'data-timeline-scope' );
-			const dataRange = el.getAttribute( 'data-animation-range' );
+			const dataRangeSelector = el.getAttribute( 'data-timeline-range' );
+			const dataRangeOffset = el.getAttribute( 'data-timeline-offset' );
 			let dataRangeStart = 0;
 			let dataRangeEnd = 0;
 
-			if (dataRange) {
-				const rangeValues = dataRange.split(/\s+/); // Split by space (supports "20% -100px")
+			if (dataRangeOffset) {
+				const rangeOffsetValues = dataRangeOffset.split(/\s+/); // Split by space (supports "20% -100px")
 
-				dataRangeStart = rangeValues[0] || 0;
-				dataRangeEnd = rangeValues[1] || 0;
+				dataRangeStart = rangeOffsetValues[0] || 0;
+				dataRangeEnd = rangeOffsetValues[1] || 0;
 			}
 
 			// Store original element styles
@@ -212,13 +271,13 @@ class Scrollage {
 			// Retrieve animation data for the element
 			const animations = getAnimationData(el);
 
-			// Validate and assign the scroll-timeline scope element
-			const scopeEl = dataScopeSelector ? validateEl(dataScopeSelector, 'timeline scope') : null;
+			// Validate and assign the scroll-timeline range element
+			const rangeEl = dataRangeSelector ? this.validateEl(dataRangeSelector, 'timeline range') : null;
 
-			// Get scope dimensions
-			const scopeSizes = { 
-				x: scopeEl?.clientWidth || this.source.scrollWidth, 
-				y: scopeEl?.clientHeight || this.source.scrollHeight
+			// Get range dimensions
+			const rangeSizes = { 
+				x: rangeEl?.clientWidth || this.source.scrollWidth, 
+				y: rangeEl?.clientHeight || this.source.scrollHeight
 			};
 
 			// Get element dimensions
@@ -227,20 +286,20 @@ class Scrollage {
 				y: el.clientHeight
 			};
 
-			// Compute scroll-timeline scope and initial progress
+			// Compute scroll-timeline range and initial progress
 			const timelineRangeData = this.getTimelineRange(
-				scopeEl, 
+				rangeEl, 
 				dataRangeStart,
 				dataRangeEnd
 			);
 
-			const progress = this.getScrollProgress(scopeEl, timelineRangeData);
+			const progress = this.getScrollProgress(rangeEl, timelineRangeData);
 
 			// Store the processed block
 			this.blocks.push({
 				progress,
-				scopeEl,
-				scopeSizes,
+				rangeEl,
+				rangeSizes,
 				elSizes,
 				timelineRangeData,
 				animations,
@@ -269,14 +328,14 @@ class Scrollage {
 			// Skip trigger if no valid class was specified
 			if (!trigger.class || typeof trigger.class !== 'string') continue;
 
-			// Validate scope element and skip trigger if it does not exist
-			const scopeEl = trigger.scope ? validateEl(trigger.scope, 'trigger scope') : null;
-			if (trigger.scope && !scopeEl) continue;
+			// Validate range element and skip trigger if it does not exist
+			const rangeEl = trigger.range ? this.validateEl(trigger.range, 'trigger range') : null;
+			if (trigger.range && !rangeEl) continue;
 
 			// Validate target element and skip trigger if it does not exist
 			const targetEl = ('_self' === trigger.target)
-				? scopeEl
-				: trigger.target ? validateEl(trigger.target, 'trigger target') : null;
+				? rangeEl
+				: trigger.target ? this.validateEl(trigger.target, 'trigger target') : null;
 			if (trigger.target && !targetEl) continue;
 			
 			const positionData = splitValueUnit(trigger.position) || { value: 0 };
@@ -284,19 +343,19 @@ class Scrollage {
 			let position;
 			let elPos = 0;
 
-			// If no scope specified, determine source offsets...
-			if (!trigger.scope) {
+			// If no timeline range specified, determine position in `source`...
+			if (!trigger.range) {
 				const contextSourceSize = this.sourceSizes[this.isVertical ? 'y' : 'x'];
 
 				position = calculateUnitValue(positionData.unit, positionData.value, this.winSizes, contextSourceSize);
 
-			// ...otherwise calculate scroll-timeline scope and determine scope offsets
+			// ...otherwise determine position in `timeline range`
 			} else {
-				const contextScopeSize = this.isVertical ? scopeEl.scrollHeight : scopeEl.scrollWidth;
-				const rect = scopeEl.getBoundingClientRect();
+				const contextRangeSize = this.isVertical ? rangeEl.scrollHeight : rangeEl.scrollWidth;
+				const rect = rangeEl.getBoundingClientRect();
 				elPos = (this.isVertical ? rect.top : rect.left) + this.getScrollPos();
 
-				position = calculateUnitValue(positionData.unit, positionData.value, this.winSizes, contextScopeSize);
+				position = calculateUnitValue(positionData.unit, positionData.value, this.winSizes, contextRangeSize);
 			}
 
 			this.triggers.push({
@@ -340,25 +399,25 @@ class Scrollage {
 
 
 	/**
-	 * Calculates the scroll-timeline scope (start, end, and range offsets) for a given element or the source.
+	 * Calculates the scroll-timeline range (start, end, and offsets) for a given element or the source.
 	 *
-	 * - If no scope element is provided, it calculates based on the source’s scrollable dimensions.
+	 * - If no range element is provided, it calculates based on the source’s scrollable dimensions.
 	 * - Converts `px` and `%` range offsets into absolute values.
-	 * - Uses `getBoundingClientRect()` to determine the exact position of the scope element.
+	 * - Uses `getBoundingClientRect()` to determine the exact position of the range element.
 	 * - Outputs the computed start and end positions, including range offsets, in an object.
 	 *
-	 * @param {HTMLElement|null} [scopeEl=null] - The element defining the scroll-timeline scope. Defaults to `source`.
+	 * @param {HTMLElement|null} [rangeEl=null] - The element defining the scroll-timeline range. Defaults to `source`.
 	 * @param {string|number} [rangeStart=0] - The range start offset (e.g. `10`, `'10%'`, `'33vh'` or `'50px'`). Defaults to 0.
 	 * @param {string|number} [rangeEnd=0] - The range end offset (e.g. `10`, `'10%'`, `'33vh'` or `'50px'`). Defaults to 0.
 	 * 
 	 * @returns {Object} An object containing:
-	 *   @property {number} start - The initial start position of the scroll-timeline scope.
-	 *   @property {number} end - The initial end position of the scroll-timeline scope.
-	 *   @property {number} startRange - The computed range start position of the scroll-timeline scope.
-	 *   @property {number} endRange - The computed range end position of the scroll-timeline scope.
-	 *   @property {number} size - The total size of the scroll-timeline scope (end - start).
+	 *   @property {number} start - The initial start position of the scroll-timeline range.
+	 *   @property {number} end - The initial end position of the scroll-timeline range.
+	 *   @property {number} startRange - The computed range start position of the scroll-timeline range.
+	 *   @property {number} endRange - The computed range end position of the scroll-timeline range.
+	 *   @property {number} size - The total size of the scroll-timeline range (end - start).
 	 */
-	getTimelineRange = (scopeEl = null, rangeStart = 0, rangeEnd = 0) => {
+	getTimelineRange = (rangeEl = null, rangeStart = 0, rangeEnd = 0) => {
 		const contextWinSize = this.winSizes[this.isVertical ? 'y' : 'x'];
 		const contextWrapperSize = this.wrapperSizes[this.isVertical ? 'y' : 'x'];
 
@@ -376,64 +435,63 @@ class Scrollage {
 
 		let contextSourceSize = this.sourceSizes[this.isVertical ? 'y' : 'x'];
 
-		let contextScopeSize;
-		let contextScopeStart;
-		let contextScopeEnd;
+		let contextRangeSize;
+		let contextRangeStart;
+		let contextRangeEnd;
 
 		const scrollFrameSize = this.isDocumentSource ? contextWinSize : contextWrapperSize;
 
-		// If no scope specified, determine source range...
-		if (!scopeEl || scopeEl == this.source) {
+		// If no range specified, determine `source` range...
+		if (!rangeEl || rangeEl == this.source) {
 			rangeOffsetStart = calculateUnitValue(rangeStartUnit, rangeStartValue, this.winSizes, contextSourceSize);
 			rangeOffsetEnd = calculateUnitValue(rangeEndUnit, rangeEndValue, this.winSizes, contextSourceSize);
 
 			timelineRangeStart = Math.max( 
 				0, 
-				rangeOffsetStart - scrollFrameSize
+				rangeOffsetStart - (this.isDocumentSource ? 0 : scrollFrameSize)
 			);
 
 			timelineRangeEnd = Math.max(
 				timelineRangeStart,
-				Math.min( contextSourceSize + rangeOffsetEnd, contextSourceSize - scrollFrameSize )
-				 
+				Math.min( contextSourceSize + rangeOffsetEnd - (this.isDocumentSource ? contextWinSize : 0), contextSourceSize - scrollFrameSize )
 			);
 
-		// ...otherwise determine scope range
+		// ...otherwise determine provided timeline range
 		} else {
-			contextScopeSize = this.isVertical ? scopeEl.offsetHeight : scopeEl.offsetWidth;
+			contextRangeSize = this.isVertical ? rangeEl.offsetHeight : rangeEl.offsetWidth;
 
 			const sourceRectStart = this.isVertical 
 				? this.source.getBoundingClientRect().top 
 				: this.source.getBoundingClientRect().left;
 
-			const scopeRectStart = this.isVertical 
-				? scopeEl.getBoundingClientRect().top 
-				: scopeEl.getBoundingClientRect().left;
+			const rangeRectStart = this.isVertical 
+				? rangeEl.getBoundingClientRect().top 
+				: rangeEl.getBoundingClientRect().left;
 
-			contextScopeStart = scopeRectStart - sourceRectStart;
-			contextScopeEnd = contextScopeStart + contextScopeSize;
+			contextRangeStart = rangeRectStart - sourceRectStart;
+			contextRangeEnd = contextRangeStart + contextRangeSize;
 
-			rangeOffsetStart = calculateUnitValue(rangeStartUnit, rangeStartValue, this.winSizes, contextScopeSize);
-			rangeOffsetEnd = calculateUnitValue(rangeEndUnit, rangeEndValue, this.winSizes, contextScopeSize);
+			rangeOffsetStart = calculateUnitValue(rangeStartUnit, rangeStartValue, this.winSizes, contextRangeSize);
+			rangeOffsetEnd = calculateUnitValue(rangeEndUnit, rangeEndValue, this.winSizes, contextRangeSize);
 
 			timelineRangeStart =  Math.max(
 				0, 
-				contextScopeStart + rangeOffsetStart - scrollFrameSize
+				contextRangeStart + rangeOffsetStart - scrollFrameSize
 			);
 
 			timelineRangeEnd = Math.max(
 				timelineRangeStart,
-				Math.min( contextScopeEnd + rangeOffsetEnd, contextSourceSize - scrollFrameSize )
+				Math.min( contextRangeEnd + rangeOffsetEnd, contextSourceSize - scrollFrameSize )
 			);
 		}
 
 		// Debugging
-		if (false) {
-			console.log(`contextScopeStart: ${contextScopeStart}  ||  contextScopeEnd: ${contextScopeEnd}`);
+		if (Scrollage.DEBUG_MODE) {
+			console.log(`contextRangeStart: ${contextRangeStart}  ||  contextRangeEnd: ${contextRangeEnd}`);
 			console.log(`rangeOffsetStart: ${rangeOffsetStart}  ||  rangeOffsetEnd: ${rangeOffsetEnd}`);
-			console.log(`timelineRangeStart*: ${timelineRangeStart}  ||  timelineRangeEnd*: ${timelineRangeEnd}`); // *subtracted by scrollFrameSize
+			console.log(`timelineRangeStart*: ${timelineRangeStart}  ||  timelineRangeEnd*: ${timelineRangeEnd}`);
 			console.log(`cntxtWinSize: ${contextWinSize}  ||  cntxtWrapperSize: ${contextWrapperSize}`);
-			console.log(`cntxtSourceSize: ${contextSourceSize}  ||  cntxtScopeSize: ${contextScopeSize}`);
+			console.log(`cntxtSourceSize: ${contextSourceSize}  ||  cntxtRangeSize: ${contextRangeSize}`);
 		}
 
 		return {
@@ -444,21 +502,21 @@ class Scrollage {
 
 
 	/**
-	 * Calculates the scroll progression as a percentage (0 to 1) within a specified scroll-timeline scope.
+	 * Calculates the scroll progression as a percentage (0 to 1) within a specified scroll-timeline range.
 	 *
-	 * - Determines how far the user has scrolled relative to a given scope.
-	 * - Can use a custom scope element or default to the main source.
+	 * - Determines how far the user has scrolled relative to a given range.
+	 * - Can use a custom range element or default to the main source.
 	 * - Clamps the result between 0 (not scrolled) and 1 (fully scrolled).
 	 *
-	 * @param {HTMLElement|string|null} [scope=null] - The target element or selector defining the scroll-timeline scope. Defaults to the source.
-	 * @param {Object|null} [timelineRangeData=null] - Precomputed scroll-timeline scope data to avoid redundant calculations.
+	 * @param {HTMLElement|string|null} [range=null] - The target element or selector defining the scroll-timeline range. Defaults to the source.
+	 * @param {Object|null} [timelineRangeData=null] - Precomputed scroll-timeline range data to avoid redundant calculations.
 	 * 
 	 * @returns {number} - The normalized scroll progression (0 to 1).
 	 */
-	getScrollProgress = (scope = null, timelineRangeData = null) => {
+	getScrollProgress = (range = null, timelineRangeData = null) => {
 		const scrollPos = this.getScrollPos();
-		const scopeEl = scope ? validateEl(scope, 'scope') : this.source;
-		if (!timelineRangeData) timelineRangeData = this.getTimelineRange(scopeEl);
+		const rangeEl = range ? this.validateEl(range, 'range') : this.source;
+		if (!timelineRangeData) timelineRangeData = this.getTimelineRange(rangeEl);
 			
 		// Determine start and end scroll positions
 		const scrollStart = timelineRangeData.start - scrollPos;
@@ -471,7 +529,7 @@ class Scrollage {
 		scrollPercentage = Math.min(100, Math.max(0, scrollPercentage));
 		
 		// Debugging
-		if (false) {
+		if (Scrollage.DEBUG_MODE) {
 			console.log(`scrollPos: ${scrollPos}  ||  scrollPercentage: ${scrollPercentage}`);
 			console.log(`scrollStartPos: ${scrollStart}  ||  scrollEndPos: ${scrollEnd}`);
 		}
@@ -488,7 +546,7 @@ class Scrollage {
 	update = () => {
 		for (let i = 0; i < this.blocks.length; i++) {
 			this.blocks[i].progress = this.getScrollProgress(
-				this.blocks[i].scopeEl,
+				this.blocks[i].rangeEl,
 				this.blocks[i].timelineRangeData
 			);
 		}
@@ -500,7 +558,7 @@ class Scrollage {
 
 
 	/**
-	 * Applies animations to all blocks based on their progress within the scroll-timeline scope.
+	 * Applies animations to all blocks based on their progress within the scroll-timeline range.
 	 * [Formula: newValue = targetMin + (targetMax - targetMin) * (sourceValue - sourceMin) / (sourceMax - sourceMin)]
 	 *
 	 * @returns {void} - This function does not return a value.
@@ -515,6 +573,8 @@ class Scrollage {
 			const breakpoint = this.currentBreakpoint;
 			const el = this.elems[i];
 
+			if (!el) continue;
+
 			let curAnimationData;
 			let transforms = [];
 			let filters = [];
@@ -525,7 +585,7 @@ class Scrollage {
 
 				if (animation.move) {
 					curAnimationData = animation.move.responsive?.[breakpoint] || animation.move;
-					transforms.push( move(curAnimationData, block.progress, block.scopeSizes, block.elSizes, this.winSizes) );
+					transforms.push( move(curAnimationData, block.progress, block.rangeSizes, block.elSizes, this.winSizes) );
 				}
 				if (animation.rotate) {
 					curAnimationData = animation.rotate.responsive?.[breakpoint] || animation.rotate;
@@ -584,18 +644,25 @@ class Scrollage {
 		this.triggers = [];
 		
 		// Remove event listeners
-		(this.options.source ? this.source : window).removeEventListener('scroll', this.update);
-		(this.options.source ? this.source : window).removeEventListener('touchmove', this.update);
-		window.removeEventListener('resize', debounce(this.init.bind(this)));
-		window.removeEventListener('orientationchange', debounce(this.init.bind(this)));
+		(this.options.source ? this.source : window)?.removeEventListener('scroll', this.update);
+		(this.options.source ? this.source : window)?.removeEventListener('touchmove', this.update);
+
+		/*
+		window.removeEventListener('resize', this.debouncedSetup);
+		window.removeEventListener('orientationchange', this.debouncedSetup)
+		*/
 
 		// Remove resize observer
-		this.resizeObserver.disconnect();
+		this.resizeObserver?.disconnect();
+
+		//this.isActive = false;
 	}
 
 }
 
+export default Scrollage;
+
 // Expose Scrollage globally for browsers
 if (typeof window !== 'undefined') {
-    window.Scrollage = Scrollage;
+    window.Scrollage = Scrollage; // Optional global exposure
 }

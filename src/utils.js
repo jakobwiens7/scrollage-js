@@ -90,37 +90,6 @@ export function roundValue(value, decimals = 1) {
 
 
 /**
- * Validates whether an element / selector is a valid DOM element.
- *
- * - Allows both selector strings and direct element references.
- * - Checks if the element exists in the DOM.
- *
- * @param {string|HTMLElement|null} el - The selector or element to validate.
- * @param {string} context - A string that describes the context of the validated element
- * 
- * @returns {HTMLElement|null} - The valid element or `null` if invalid.
- */
-export function validateEl(el, context = 'element') {
-
-    // If it's already an element, return it directly
-    if (el instanceof HTMLElement) {
-        return el;
-    }
-
-    // If it's a string, try to select the element
-    if (typeof el === 'string') {
-        const selectedEl = document.querySelector(el);
-
-        if (selectedEl) return selectedEl;
-    }
-    
-    // Revert to default if not found
-    console.warn(`ScrollageJS: Your desired ${context} "${el}" is not a valid element or selector.`);
-    return null;
-}
-
-
-/**
  * Safely parses a JSON string and returns an object.
  * If parsing fails, logs a warning and returns an empty object.
  *

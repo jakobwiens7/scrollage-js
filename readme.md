@@ -10,7 +10,7 @@ You can include ScrollageJS in your project by adding the compiled JavaScript fi
 
 ## Usage
 
-    <div class="scope">
+    <div class="range">
         <div class="scrollage" data-animation-move='{"startY":"-60px", "endY":"30%"}'>
             My animated element
         </div>
@@ -33,7 +33,7 @@ Specifies the movement animation parameters via JSON object:
             "laptop": { "endY": 30 | "30%" | "60px" | "15vh", ... },
             "desktop": { "startY": 30 | "30%" | "60px" | "15vh", ... }
         },
-        "easing": "InSine" | "OutSine" | "InOutSine" | "InCubic" | ...
+        "easing": "SineIn" | "SineOut" | "SineInOut" | "CubicIn" | ...
     }
 
 - `startX`/`endX`: The initial and final horizontal movement values (in percentage, pixels or `vw`). Default: `0`.
@@ -50,7 +50,7 @@ Defines rotation animation parameters via JSON object:
     {
         "end": -360 | "-360deg",
         "responsive": { ... }
-        "easing": "InSine" | "OutSine" | "InOutSine" | ...
+        "easing": "SineIn" | "SineOut" | "SineInOut" | ...
     }
 
 or
@@ -59,7 +59,7 @@ or
         "endY": -360 | "-360deg",
         "startX": 180 | "180deg",
         "responsive": { ... }
-        "easing": "InSine" | "OutSine" | "InOutSine" | ...
+        "easing": "SineIn" | "SineOut" | "SineInOut" | ...
     }
 
 - `start` / `end`: The initial and final rotation angles (in degrees) on the default axis (`Z`).
@@ -78,7 +78,7 @@ Configures scaling animations via JSON object:
     {
         "end": 150 | "150%",
         "responsive": { ... }
-        "easing": "InSine" | "OutSine" | "InOutSine" | ...
+        "easing": "SineIn" | "SineOut" | "SineInOut" | ...
     }
 
 or
@@ -87,7 +87,7 @@ or
         "startY": 0 | "0%",
         "endX": 150 | "150%",
         "responsive": { ... }
-        "easing": "InSine" | "OutSine" | "InOutSine" | ...
+        "easing": "SineIn" | "SineOut" | "SineInOut" | ...
     }
 
 - `start` / `end`: The initial and final scale values for both X and Y axes (in percentage).
@@ -105,7 +105,7 @@ Specifies fade (opacity) animation settings via JSON object:
     {
         "start": 0 | "0%",
         "responsive": { ... }
-        "easing": "InSine" | "OutSine" | "InOutSine" | ...
+        "easing": "SineIn" | "SineOut" | "SineInOut" | ...
     }
 
 - `start`/`end`: The initial and final opacity in percentage (0–100). Default: `100`.
@@ -120,7 +120,7 @@ Configures saturation animations via JSON object:
         "start": 0 | "0%",
         "end": 150 | "150%",
         "responsive": { ... }
-        "easing": "InSine" | "OutSine" | "InOutSine" | ...
+        "easing": "SineIn" | "SineOut" | "SineInOut" | ...
     }
 
 - `start`/`end`: The initial and final saturation in percentage. Default: `100`.
@@ -134,7 +134,7 @@ Configures blur effect animations via JSON object:
     {
         "end": 16 | "16px",
         "responsive": { ... }
-        "easing": "InSine" | "OutSine" | "InOutSine" | ...
+        "easing": "SineIn" | "SineOut" | "SineInOut" | ...
     }
 
 - `start`/`end`: The initial and final blur values in pixels. Default: `0`.
@@ -143,23 +143,23 @@ Configures blur effect animations via JSON object:
 
 Note: This can heavily impact performance, especially on lower end devices! You have been warned!
 
-### `data-timeline-scope`
+### `data-timeline-range`
 
-By default, ScrollageJS uses the entire page (`documentElement`) as the scroll timeline. However, you can define any element as a timeline scope by specifying a CSS selector. This ensures animations start when the scope element enters the viewport and end when it leaves.
-
-**Examples:**  
-`data-timeline-scope="#my-section"`  
-`data-timeline-scope="section.timeline-scope"`
-
-### `data-animation-range`
-
-Adjust the starting and ending positions of the animation by applying an offset to the scroll range. In vertical mode, this modifies the top and bottom positions. In horizontal mode, it affects the left and right positions. You can use positive or negative numbers with `%`, `px`, `vh` or `vw` units.
+By default, ScrollageJS uses the entire page (`documentElement`) as the scroll timeline. However, you can define any element as a timeline range by specifying a CSS selector. This ensures animations start when the range element enters the viewport and end when it leaves.
 
 **Examples:**  
-`data-animation-range="30 -30"` or `data-animation-range="30% -30%"`  
-`data-animation-range="15vh -15vh"` or `data-animation-range="15vw -15vw"`  
-`data-animation-range="60px -60px"`  
-`data-animation-range="-10vh 120px"`
+`data-timeline-range="#my-section"`  
+`data-timeline-range=".timeline-range"`
+
+### `data-timeline-offset`
+
+Adjust the starting and ending positions of the animation by applying offsets to the scroll-timeline range. In vertical mode, this modifies the top and bottom positions. In horizontal mode, it affects the left and right positions. You can use positive or negative numbers with `%`, `px`, `vh` or `vw` units.
+
+**Examples:**  
+`data-timeline-offset="30 -30"` or `data-timeline-offset="30% -30%"`  
+`data-timeline-offset="15vh -15vh"` or `data-timeline-offset="15vw -15vw"`  
+`data-timeline-offset="60px -60px"`  
+`data-timeline-offset="-10vh 120px"`
 
 ## JavaScript Initialization
 
@@ -205,8 +205,8 @@ Default: `[]`
 
     triggers: [
         {
-            scope: "#intro",
-            // Optional: The element/selector string, that defines the scroll-timeline scope.
+            range: "#intro",
+            // Optional: The element/selector string, that defines the scroll-timeline range.
             // Defaults to the scroll-container `source` or `documentElement`.
 
             position: 100 | "250px",
@@ -242,8 +242,8 @@ Here’s a complete example combining HTML structure and JavaScript initializati
         <body>
             <div class="range">
                 <div class="scrollage"
-                    data-timeline-scope=".range"
-                    data-animation-range="20% -20%"
+                    data-timeline-range=".range"
+                    data-timeline-offset="20% -20%"
                     data-animation-move='{"endY": 100}'
                     data-animation-fade='{"start: 0}'
                 >
@@ -256,7 +256,7 @@ Here’s a complete example combining HTML structure and JavaScript initializati
                 const scrollageInstance = new Scrollage('.scrollage', {
 
                     triggers: [{
-                        scope: '.scope',
+                        range: '.range',
                         class: 'has-triggered',
                         position: '50%',
                         target: '_self'

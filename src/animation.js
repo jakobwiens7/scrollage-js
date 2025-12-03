@@ -135,9 +135,9 @@ export function getAnimationData(el) {
     for (const type of animationTypes) {
         const attrName = `data-animation-${type}`;
         const data = el.getAttribute(attrName);
-
+        
         if (data) {
-            const parsedData = safeParseJSON(data, attrName);
+            const parsedData = safeParseJSON(data.replace(/'/g, '"'), attrName);
             const responsiveData = parsedData.responsive || {};
 
             // Extract responsive animation settings
@@ -191,26 +191,26 @@ function getAnimationProgress(start, end, progress = 0, easing = false ) {
 /**
  * Calculates the transform `translate` values for an element.
  *
- * - Converts percentage-based movement values to pixel values relative to `scopeSizes`.
+ * - Converts percentage-based movement values to pixel values relative to `rangeSizes`.
  * - Uses `getAnimationProgress()` to interpolate movement based on scroll progress.
  *
  * @param {Object} animationData - The movement animation configuration.
  * @param {number} progress - The current animation progress (0 to 1).
- * @param {Object} scopeSizes - The range dimensions used for percentage calculations.
+ * @param {Object} rangeSizes - The range dimensions used for percentage calculations.
  * @param {Object} elSizes - The target element dimensions.
  * @param {Object} winSizes - The window dimensions for vw/vh unit calculation.
  * 
  * @returns {string} - The computed `translate` CSS transformation string.
  */
-export function move(animationData, progress, scopeSizes, elSizes, winSizes) {
+export function move(animationData, progress, rangeSizes, elSizes, winSizes) {
 
     const calculateMovement = (axis) => {
         if (!animationData[axis]) return 0;
 
         const { start, end } = animationData[axis];
 
-        const startValue = calculateUnitValue(start.unit, start.value, winSizes, scopeSizes[axis], elSizes[axis]);
-        const endValue = calculateUnitValue(end.unit, end.value, winSizes, scopeSizes[axis], elSizes[axis]);
+        const startValue = calculateUnitValue(start.unit, start.value, winSizes, rangeSizes[axis], elSizes[axis]);
+        const endValue = calculateUnitValue(end.unit, end.value, winSizes, rangeSizes[axis], elSizes[axis]);
 
         return getAnimationProgress(startValue, endValue, progress, animationData.easing);
     };
