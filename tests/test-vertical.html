@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScrollageJS (vertical)</title>
+    <style>
+        body {
+            --margin-left: 250px;
+
+            margin: 0;
+        }
+        .main-wrapper {
+            max-width: 100vw;
+            margin: 10px;
+            overflow: hidden;
+        }
+        h2, p {
+            margin-left: var(--margin-left);
+        }
+        section {
+            position: relative;
+            display: flex;
+            align-items: start;
+            justify-content: start;
+            gap: 25px;
+        }
+        section.range {
+            width: fit-content;
+            max-width: calc( 100vw - var(--margin-left) - 64px);
+            min-width: 50%;
+            margin-bottom: 50px;
+            margin-left: var(--margin-left);
+            margin-right: auto;
+            padding-right: 27px;
+            background-color: #eee;
+            outline: 1px solid #ccc;
+        }
+        section.range:after {
+            content: "Timeline Range";
+            position: absolute;
+            right: -27px;
+            width: 25px;
+            height: 100%;
+            border-left: 2px dashed;
+            color: green;            
+            font-family: 'Courier New', Courier, monospace;
+            font-size: larger;
+            font-weight: bold;
+            text-align: center;
+            line-height: 25px;
+            writing-mode: vertical-rl;
+        }
+        section .offset-in:first-child,
+        section .offset-out:last-child {
+            border-bottom: 2px solid red;
+        }
+        section [class*="offset-"]:first-child:after {
+            content: "Range Start";
+        }
+        section .offset-in:last-child,
+        section .offset-out:first-child {
+            border-top: 2px solid red;
+        }
+        section [class*="offset-"]:last-child:after {
+            content: "Range End";
+        }
+        [class*="scrollage"] {
+            position: relative;
+            width: 240px;
+            min-height: 150px;
+            padding: 12.5px;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            background: lightblue;
+            z-index: 10;
+            perspective: 100px;
+            /*transition: transform .1s;*/
+        }
+        [class*="scrollage"].center {
+            align-self: center;
+        }
+
+        .offset-in, .offset-out {
+            position:absolute; 
+            width: 100%;
+            z-index: 1;
+        }
+        .offset-in {
+            background: #fff;
+        }
+        .offset-out {
+            background: #e4e3e3;
+        }
+        .offset-in:after, .offset-out:after  {
+            position: absolute;
+            right: 0;
+            width: 25px;
+            height: 100%;
+            border-left: 2px dashed;
+            color: red;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            line-height: 25px;
+            text-align: center;
+            writing-mode: vertical-rl;
+        }
+
+        .trigger {
+            position: absolute; 
+            top: 0; 
+            right: 0; 
+            left: 0; 
+            border-bottom: 2px dashed orange;
+        }
+		.trigger-orange-bg {
+			background-color: orange !important;
+		}
+        
+        [class*="scroll-container"] {
+            position: relative;
+            outline: 4px dotted gray;
+            background: azure;
+            padding: 20px;
+            height: 400px;
+            overflow-y: scroll;
+        }
+
+    </style>
+    <script src="../dist/scrollage.min.js"></script>
+    <link rel="stylesheet" href="../dist/scrollage.min.css">
+</head>
+<body><div class="main-wrapper">
+
+    <!-- 1. 'Move' Animation (default source) -->
+    <h2>#t01 Basic 'Move' Animation (default source)</h2>
+    <p>The element should start moving to the edges of the document when scrolling.</p>
+    <div id="t01" style="height: 250px;">
+        <div class="scrollage" style="position: absolute; top: 0; left: 0; background: rgb(125, 255, 175); z-index: 100;"
+            data-animation-move='{"endY": 100}'
+		>
+            <code>data-animation-move</br>{"endY": 100}</code>
+        </div>
+    </div>
+
+    <!-- 2. 'Move' Animation (custom scroll-timeline range) -->
+    <h2>#t02 'Move' Animation (custom scroll-timeline range)</h2>
+    <p>The elements should start moving when the scroll-timeline range comes into view.</p>
+    <section id="t02" class="range" style="height: 500px;">
+        <div class="scrollage"
+			data-timeline-range='#t02'
+            data-animation-move='{"endY":100}'
+		>
+            <code>data-timeline-range</br>#t02
+                <hr>data-animation-move</br>{"endY": 100}
+            </code>
+        </div>
+        <div class="scrollage"
+            data-timeline-range='#t02'
+            data-animation-move='{"endY":"100%"}'
+        >
+            <code>data-timeline-range</br>#t02
+                <hr>data-animation-move</br>{"endY": "100%"}
+            </code>
+        </div>
+        <div class="scrollage"
+            data-timeline-range='#t02'
+            data-animation-move='{"endY":"50vh"}'
+        >
+            <code>data-timeline-range</br>#t02
+                <hr>data-animation-move</br>{"endY": "50vh"}
+            </code>
+        </div>
+        <div class="scrollage"
+            data-timeline-range='#t02'
+            data-animation-move='{"endY":"350px"}'
+        >
+            <code>data-timeline-range</br>#t02
+                <hr>data-animation-move</br>{"endY": "350px"}
+            </code>
+        </div>
+    </section>
+
+    <!-- 3. 'Move' Animation (custom scroll-timeline range with range offset) -->
+    <h2>#t03 'Move' Animation (custom scroll-timeline range with range offset)</h2>
+    <p>The elements should start moving when the scroll-timeline range including range offset comes into view.</p>
+    <section id="t03" class="range" style="height: 1000px;">
+        <div class="offset-in" style="top: 0; height: 30%;"></div>
+        <div class="scrollage"
+            data-timeline-range='#t03'
+            data-timeline-offset='30% -30%'
+            data-animation-move='{"endY":100}'
+        >
+            <code>data-timeline-range</br>#t03
+                <hr>data-timeline-offset</br>30% -30%
+                <hr>data-animation-move</br>{"endY": 100}
+            </code>
+        </div>
+        <div class="scrollage"
+            data-timeline-range='#t03'
+            data-timeline-offset='30% -30%'
+            data-animation-move='{"endY":"100%"}'
+        >
+            <code>data-timeline-range</br>#t03
+                <hr>data-timeline-offset</br>30% -30%
+                <hr>data-animation-move</br>{"endY": "100%"}
+            </code>
+        </div>
+        <div class="scrollage"
+            data-timeline-range='#t03'
+            data-timeline-offset='30% -30%'
+            data-animation-move='{"endY":"50vh"}'
+        >
+            <code>data-timeline-range</br>#t03
+                <hr>data-timeline-offset</br>30% -30%
+                <hr>data-animation-move</br>{"endY": "50vh"}
+            </code>
+        </div>
+        <div class="scrollage"
+            data-timeline-range='#t03'
+            data-timeline-offset='30% -30%'
+            data-animation-move='{"endY": "350px"}'
+        >
+            <code>data-timeline-range</br>#t03
+                <hr>data-timeline-offset</br>30% -30%
+                <hr>data-animation-move</br>{"endY": "350px"}
+            </code>
+        </div>
+        <div class="offset-in" style="bottom: 0; height: 30%;"></div>
+    </section>
+
+    <!-- 4. 'Rotate' Animation (custom scroll-timeline range) -->
+    <h2>#t04 'Rotate' Animation (custom scroll-timeline range)</h2>
+    <p>The elements should start rotating when the scroll-timeline range comes into view.</p>
+    <section id="t04" class="range" style="height: 500px;">
+        <div class="scrollage center" style="rotate: 180deg;"
+			data-timeline-range='#t04'
+            data-animation-rotate='{"end": 360}'
+		>
+            <code>data-timeline-range</br>#t04
+                <hr>data-animation-rotate</br>{"end": 360}
+            </code>
+        </div>
+        <div class="scrollage center" style="rotate: 0 0 1 180deg;"
+            data-timeline-range='#t04'
+            data-animation-rotate='{"endZ": "360"}'
+        >
+            <code>data-timeline-range</br>#t04
+                <hr>data-animation-rotate</br>{"endz": "360"}
+            </code>
+        </div>
+        <div class="scrollage center" style="rotate: 0 1 0 180deg;"
+            data-timeline-range='#t04'
+            data-animation-rotate='{"endY": "360deg"}'
+        >
+            <code>data-timeline-range</br>#t04
+                <hr>data-animation-rotate</br>{"endY": "360deg"}
+            </code>
+        </div>
+        <div class="scrollage center" style="rotate: 1 0 0 180deg;"
+            data-timeline-range='#t04'
+            data-animation-rotate='{"endX": "360%"}'
+        >
+            <code>data-timeline-range</br>#t04
+                <hr>data-animation-rotate</br>{"endX": "360%"}
+            </code>
+        </div>
+    </section>
+
+     <!-- 5. 'Scale' Animation (custom scroll-timeline range with mixed range offsets) -->
+     <h2>#t05 'Scale' Animation (custom scroll-timeline range with mixed range offsets)</h2>
+     <p>The elements should start scaling when the scroll-timeline range including range offsets comes into view.</p>
+     <section id="t05" class="range" style="height: 600px; margin-bottom: 35vh;">
+         <div class="offset-in" style="top: 0; height: 100px;"></div>
+         <div class="scrollage center"
+            data-timeline-range='#t05'
+            data-timeline-offset='100px 25vh'
+            data-animation-scale='{"end": 25}'
+        >
+         <code>data-timeline-range</br>#t05
+            <hr>data-timeline-offset</br>100px 25vh
+            <hr>data-animation-scale</br>{"end": 25}
+         </code>
+     </div>
+     <div class="scrollage center"
+         data-timeline-range='#t05'
+         data-timeline-offset='100px 25vh'
+         data-animation-scale='{"end": 150}'
+     >
+         <code>data-timeline-range</br>#t05
+            <hr>data-timeline-offset</br>100px 25vh
+            <hr>data-animation-scale</br>{"end": 150}
+         </code>
+     </div>
+     <div class="scrollage center"
+         data-timeline-range='#t05'
+         data-timeline-offset='100px 25vh'
+         data-animation-scale='{"endX": "25%"}'
+     >
+         <code>data-timeline-range</br>#t05
+            <hr>data-timeline-offset</br>100px 25vh
+            <hr>data-animation-scale</br>{"endY": "25%"}
+         </code>
+     </div>
+     <div class="scrollage center"
+         data-timeline-range='#t05'
+         data-timeline-offset='100px 25vh'
+         data-animation-scale='{"endY": "250%"}'
+     >
+         <code>data-timeline-range</br>#t05
+            <hr>data-timeline-offset</br>100px 25vh
+            <hr>data-animation-scale</br>{"endX": "250%"}
+         </code>
+     </div>
+         <div class="offset-out" style="bottom: -25vh; height: 25vh;"></div>
+     </section> 
+
+
+    <!-- 6. Mixed Animations (custom scroll-timeline range with mixed range offsets) -->
+    <h2>#t06 Mixed Animations (custom scroll range-timeline with mixed range offsets)</h2>
+    <p>The elements should start animating when the scroll-timeline range including range offsets comes into view.</p>
+    <section id="t06" class="range" style="height: 850px; margin-top: 20vh;">
+        <div class="offset-out" style="top: -15vh; height: 15vh;"></div>
+        <div class="scrollage"
+            data-timeline-range='#t06'
+            data-timeline-offset='-15vh -200px'
+            data-animation-move='{"endX": 100, "endY": 100}'
+            data-animation-rotate='{"end": 720}'
+            data-animation-scale='{"end": 50}'
+        >
+            <code>data-timeline-range</br>#t06
+                <hr>data-timeline-offset</br>-15vh -200px
+                <hr>data-animation-move</br>{"endX": 100, "endY": 100}
+                <hr>data-animation-rotate</br>{"end": 720}
+                <hr>data-animation-scale</br>{"end": 50}
+            </code>
+        </div>
+        <div class="scrollage"
+            data-timeline-range='#t06'
+            data-timeline-offset='-15vh -200px'
+            data-animation-move='{"endY": 100}'
+            data-animation-scale='{"end": 150}'
+            data-animation-fade='{"end": 0}'
+        >
+            <code>data-timeline-range</br>#t06
+                <hr>data-timeline-offset</br>-15vh 200px
+                <hr>data-animation-move</br>{"endY": 100}
+                <hr>data-animation-scale</br>{"end": 150}
+                <hr>data-animation-fade</br>{"end": 0}
+            </code>
+        </div>
+        <div class="scrollage center"
+            data-timeline-range='#t06'
+            data-timeline-offset='-15vh -200px'
+            data-animation-move='{"endX": "250px"}'
+            data-animation-rotate='{"endY": -90}'
+            data-animation-blur='{"end": 15}'
+        >
+            <code>data-timeline-range</br>#t06
+                <hr>data-timeline-offset</br>-15vh -200px
+                <hr>data-animation-move</br>{"endX": "250px"}
+                <hr>data-animation-scale</br>{"end": 50}
+                <hr>data-animation-saturate</br>{"end": 0}
+            </code>
+        </div>
+        <div class="scrollage center" style="background-color: pink;"
+            data-timeline-range='#t06'
+            data-timeline-offset='-15vh -200px'
+            data-animation-move='{"endX": -100}'
+            data-animation-scale='{"end": 50}'
+            data-animation-saturate='{"end": 0}'
+        >
+            <code>data-timeline-range</br>#t06
+                <hr>data-timeline-offset</br>-15vh -200px
+                <hr>data-animation-move</br>{"endX": -100}
+                <hr>data-animation-scale</br>{"end": 50}
+                <hr>data-animation-saturate</br>{"end": 0}
+            </code>
+        </div>
+        <div class="offset-in" style="bottom: 0; height: 200px;"></div>
+    </section>
+
+
+    <!-- 7. Mixed animations (custom source) -->
+    <h2>#t07 Mixed animations (custom source)</h2>
+    <p>The elements should start animating when scrolling inside the source scroll-container.</p>
+    <div class="scroll-container" style="margin-bottom: 250px;">
+        <section id="t07" style="height: 1000px; padding-bottom: 400px; justify-content: center;">
+            <div class="source-scrollage"
+                data-animation-move='{"endY": 90}'
+                data-animation-rotate='{"end": 720}'
+                data-animation-scale='{"end": 50}'
+            >
+                <code>data-animation-move</br>{"endY": 90}
+                    <hr>data-animation-rotate</br>{"end": 720}
+                    <hr>data-animation-scale</br>{"end": 50}
+                </code>
+            </div>
+            <div class="source-scrollage"
+                data-animation-move='{"endY": 90}'
+                data-animation-scale='{"end": 150}'
+            >
+                <code>data-animation-move</br>{"endY": 90}
+                    <hr>data-animation-scale</br>{"end": 150}
+                </code>
+            </div>
+            <div class="source-scrollage" 
+                data-animation-move='{"endY": "950px"}'
+                data-animation-rotate='{"endY":"360deg"}'
+            >
+                <code>data-animation-move</br>{"endY": "950px"}
+                    <hr>data-animation-rotate<br>{"endY": "360deg"}
+                </code>
+            </div>
+        </section>
+    </div>
+
+
+    <!-- 8. Mixed animations (custom source with range offsets) -->
+    <h2>#t08 Mixed animations (custom source with range offsets)</h2>
+    <p>The elements should start animating when scrolling inside the source scroll-container including range offsets.</p>
+    <div class="scroll-container-2" style="margin-bottom: 250px; padding: 0;">
+        <section id="t08" style="height: 1200px; justify-content: center;">
+            <div class="offset-in" style="top: 0; height: 450px;"></div>
+            <div class="source-scrollage center"
+                data-timeline-offset="450px -40%"
+                data-animation-move='{"endY": 40}'
+                data-animation-rotate='{"end": 720}'
+                data-animation-scale='{"end": 50}'
+            >
+                <code>data-timeline-offset</br>450px -33%
+                    <hr>data-animation-move</br>{"endY": 40}
+                    <hr>data-animation-rotate</br>{"end": 720}
+                    <hr>data-animation-scale</br>{"end": 50}
+                </code>
+            </div>
+            <div class="source-scrollage center"
+                data-timeline-offset="450px -40%"
+                data-animation-move='{"endY": "150px"}'
+                data-animation-scale='{"end": 150}'
+            >
+                <code>data-timeline-offset</br>450px -33%
+                    <hr>data-animation-move</br>{"endY": "150px"}
+                    <hr>data-animation-scale</br>{"end": 150}
+                </code>
+            </div>
+            <div class="source-scrollage center" 
+                data-timeline-offset="450px -40%"
+                data-animation-move='{"endY": "15vh"}'
+                data-animation-rotate='{"endY":"360deg"}'
+            >
+                <code>data-timeline-offset</br>450px -33%
+                    <hr>data-animation-move</br>{"endY": "15vh"}
+                    <hr>data-animation-rotate<br>{"endY": "360deg"}
+                </code>
+            </div>
+            <div class="offset-in" style="bottom: 0; height: 40%;"></div>
+        </section>
+    </div>
+
+
+    <!-- 9. 'Move' Animation (custom source, custom range and range offsets) -->
+    <h2>#t09 'Move' Animation (custom source, custom range and range offsets)</h2>
+    <p>The elements should start moving when scrolling inside the scroll-container source and the scroll-timeline range including range offsets comes into view.</p>
+    <div class="scroll-container-3" style="margin-bottom: 250px; padding: 0;">
+        <section id="t09" class="range" style="height: 500px; margin-block: 600px;">
+            <div class="offset-out" style="top: -150px; height: 150px;"></div>
+            <div class="source-scrollage"
+                data-timeline-range='#t09'
+                data-timeline-offset='-150px -175px'
+                data-animation-move='{"endY":100}'
+            >
+                <code>data-timeline-range</br>#t09
+                    <hr>data-timeline-offset</br>-150px -175px
+                    <hr>data-animation-move</br>{"endY": 100}
+                </code>
+            </div>
+            <div class="source-scrollage"
+                data-timeline-range='#t09'
+                data-timeline-offset='-150px -175px'
+                data-animation-move='{"endY":"100%"}'
+            >
+                <code>data-timeline-range</br>#t09
+                    <hr>data-timeline-offset</br>-150px -175px
+                    <hr>data-animation-move</br>{"endY": "100%"}
+                </code>
+            </div>
+            <div class="source-scrollage"
+                data-timeline-range='#t09'
+                data-timeline-offset='-150px -175px'
+                data-animation-move='{"endY":"33vh"}'
+            >
+                <code>data-timeline-range</br>#t09
+                    <hr>data-timeline-offset</br>-150px -175px
+                    <hr>data-animation-move</br>{"endY": "33vh"}
+                </code>
+            </div>
+            <div class="source-scrollage"
+                data-timeline-range='#t09'
+                data-timeline-offset='-150px -175px'
+                data-animation-move='{"endY":"250px"}'
+            >
+                <code>data-timeline-range</br>#t09
+                    <hr>data-timeline-offset</br>-150px -175px
+                    <hr>data-animation-move</br>{"endY": "250px"}
+                </code>
+            </div>
+            <div class="offset-in" style="bottom: 0; height: 175px;"></div>
+        </section>
+    </div>
+
+    <!-- 10. Responsive mixed Animations (custom range) -->
+    <h2>#t10 Responsive mixed Animations (custom range)</h2>
+    <p>The elements should animate differently depending on screen sizes.</p>
+    <section id="t10" class="range" style="height: 750px;">
+        <div class="scrollage"
+            data-timeline-range='#t10'
+            data-animation-move='{"responsive": {"phone": {"endY": 100} }}'
+            data-animation-scale='{"responsive": {"tablet": {"end": 10} }}'
+            data-animation-rotate='{"responsive": {"laptop": {"end": 360} }}'
+            data-animation-blur='{"responsive": {"desktop": {"end": "36px"} }}'
+        >
+            <code>data-timeline-range</br>#t10
+                <hr>data-animation-move</br>{"responsive": {"phone": {"endY": 100} }}
+                <hr>data-animation-scale</br>{"responsive": {"tablet": {"end": 10} }}
+                <hr>data-animation-rotate</br>{"responsive": {"laptop": {"end": 360} }}
+                <hr>data-animation-blur</br>{"responsive": {"desktop": {"end": "36px"} }}
+            </code>
+        </div>
+        <div class="scrollage"
+            data-timeline-range='#t10'
+            data-animation-move='{"responsive": {"phone": {"endX": 100} }}'
+            data-animation-scale='{"responsive": {"tablet": {"end": 150} }}'
+            data-animation-rotate='{"responsive": {"laptop": {"end": -360} }}'
+            data-animation-saturate='{"responsive": {"desktop": {"end": 0} }}'
+        >
+            <code>data-timeline-range</br>#t10
+                <hr>data-animation-move</br>{"responsive": {"phone": {"endX": 100} }}
+                <hr>data-animation-scale</br>{"responsive": {"tablet": {"end": 150} }}
+                <hr>data-animation-rotate</br>{"responsive": {"laptop": {"end": -360} }}
+                <hr>data-animation-saturate</br>{"responsive": {"desktop": {"end": 0} }}
+            </code>
+        </div>
+    </section>
+
+
+    <!-- 11. Responsive mixed Animations (custom range with mixed range offsets) -->
+    <h2>#t11 Responsive mixed Animations (custom range with mixed range offsets)</h2>
+    <p>The elements should animate differently depending on screen sizes.</p>
+    <section id="t11" class="range" style="height: 900px; margin-top: 18vh;">
+        <div class="offset-out" style="top: -15vh; height: 15vh;"></div>
+        <div class="scrollage"
+            data-timeline-range='#t11'
+            data-timeline-offset='-15vh -200px'
+            data-animation-move='{"responsive": {"phone": {"endY": 100} }}'
+            data-animation-scale='{"responsive": {"tablet": {"end": 10} }}'
+            data-animation-rotate='{"responsive": {"laptop": {"end": 360} }}'
+            data-animation-blur='{"responsive": {"desktop": {"end": "36px"} }}'
+        >
+            <code>data-timeline-range</br>#t11
+                <hr>data-timeline-offset</br>-15vh -200px
+                <hr>data-animation-move</br>{"responsive": {"phone": {"endY": 100} }}
+                <hr>data-animation-scale</br>{"responsive": {"tablet": {"end": 10} }}
+                <hr>data-animation-rotate</br>{"responsive": {"laptop": {"end": 360} }}
+                <hr>data-animation-blur</br>{"responsive": {"desktop": {"end": "36px"} }}
+            </code>
+        </div>
+        <div class="scrollage"
+            data-timeline-range='#t11'
+            data-timeline-offset='-15vh -200px'
+            data-animation-move='{"responsive": {"phone": {"endX": 100} }}'
+            data-animation-scale='{"responsive": {"tablet": {"end": 150} }}'
+            data-animation-rotate='{"responsive": {"laptop": {"end": -360} }}'
+            data-animation-saturate='{"responsive": {"desktop": {"end": 0} }}'
+        >
+            <code>data-timeline-range</br>#t11
+                <hr>data-timeline-offset</br>-15vh 200px
+                <hr>data-animation-move</br>{"responsive": {"phone": {"endX": 100} }}
+                <hr>data-animation-scale</br>{"responsive": {"tablet": {"end": 150} }}
+                <hr>data-animation-rotate</br>{"responsive": {"laptop": {"end": -360} }}
+                <hr>data-animation-saturate</br>{"responsive": {"desktop": {"end": 0} }}
+            </code>
+        </div>
+        <div class="offset-in" style="bottom: 0; height: 200px;"></div>
+    </section>
+
+
+    <!-- 12. Trigger -->
+    <h2>#t12 Scroll Triggers</h2>
+    <p>Should trigger class "trigger-orange-bg" at 50% scroll position.</p>
+    <section id="t12" class="range" style="position: relative; height: 800px; margin-bottom: 75vh;">
+        <pre></br>
+            triggers: [{ 
+            range: '#t12', 
+            class: 'trigger-orange-bg', 
+            position: '50%', 
+            target: '_self' 
+            }]
+        </pre>
+        <div class="trigger" style="height: 50%;"></div>
+    </section>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // Basic initialization
+            const scrollage = new Scrollage('.scrollage', {
+                triggers: [{ class: 'has-scrolled' }, {
+                    range: '#t12',
+                    position: '50%',
+                    class: 'trigger-orange-bg',
+                    target: '_self'
+                }]
+            });
+			console.log(scrollage);
+
+            
+            // Custom source initialization
+            const source_scrollage = new Scrollage('.scroll-container .source-scrollage', {
+                source: '.scroll-container'
+            });
+
+            // Custom source-2 initialization
+            const source_scrollage_2 = new Scrollage('.scroll-container-2 .source-scrollage', {
+                source: '.scroll-container-2'
+            });
+            
+            // Custom source-3 initialization
+            const source_scrollage_3 = new Scrollage('.scroll-container-3 .source-scrollage', {
+                source: '.scroll-container-3'
+            });
+            
+
+        });
+    </script>
+</div></body>
+</html>
